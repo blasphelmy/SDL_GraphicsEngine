@@ -1,16 +1,23 @@
 #pragma once
 #include <cstdint>
 #include <SDL.h>
+#include <SDL_ttf.h>
+#include <chrono>
+#include <thread>
 namespace blsp
 {
+    using std::chrono::high_resolution_clock;
+    using std::chrono::duration_cast;
+    using std::chrono::milliseconds;
+    using std::chrono::microseconds;
+    using std::chrono::seconds;
 
     template<class TYPE>
-    class vector2d {
-    public:
+    struct vector2d {
         TYPE x, y;
-        vector2d()                                { this->x = 0; this->y = 0; }
+        vector2d()                                { this->x = 0;  this->y = 0; }
         vector2d(TYPE xy)                         { this->x = xy; this->y = xy; }
-        vector2d(TYPE x, TYPE y)                  { this->x = x; this->y = y; }
+        vector2d(TYPE x, TYPE y)                  { this->x = x;  this->y = y; }
 
         void setAll(TYPE xyz)                     { this->x = xyz; this->y = xyz; }
 
@@ -24,12 +31,11 @@ namespace blsp
     };
 
     template<class TYPE>
-    class vector3d {
-    public:
+    struct vector3d {
         TYPE x, y, z;
-        vector3d()                                { this->x = 0; this->y = 0; this->z = 0; }
+        vector3d()                                { this->x = 0;   this->y = 0;   this->z = 0; }
         vector3d(TYPE xyz)                        { this->x = xyz; this->y = xyz; this->z = xyz; }
-        vector3d(TYPE x, TYPE y, TYPE z)          { this->x = x; this->y = y; this->z = z; }
+        vector3d(TYPE x, TYPE y, TYPE z)          { this->x = x;   this->y = y;   this->z = z; }
 
         void setAll(TYPE xyz)                     { this->x = xyz; this->y = xyz; this->z = xyz; }
 
@@ -43,12 +49,11 @@ namespace blsp
     };
 
     template<class TYPE>
-    class vector4d {
-    public:
+    struct vector4d {
         TYPE x, y, z, a;
-        vector4d()                                { this->x = 0; this->y = 0; this->z = 0; this->a = 0; }
+        vector4d()                                { this->x = 0;   this->y = 0;   this->z = 0; this->a = 0; }
         vector4d(TYPE xyz)                        { this->x = xyz; this->y = xyz; this->z = xyz; }
-        vector4d(TYPE x, TYPE y, TYPE z, TYPE a)  { this->x = x; this->y = y; this->z = z; this->a = a; }
+        vector4d(TYPE x, TYPE y, TYPE z, TYPE a)  { this->x = x;   this->y = y;   this->z = z; this->a = a; }
 
         void setAll(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
 
@@ -83,12 +88,13 @@ namespace blsp
     class Color : public vector4di8t { public: Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) { this->x = r; this->y = g; this->z = b; this->a = a; } };
 
     static const Color RED(204, 0, 0, 255), DARK_RED(102, 0, 0, 255), ORANGE(255, 128, 0, 255), BROWN(102, 51, 0, 255), DARK_BROWN(51, 25, 0, 255),
-        GREEN(25, 51, 0, 255), LIME_GREEN(128, 255, 0, 255), FOREST_GREEN(0, 51, 0, 255), CYAN(0, 255, 255, 255), TEAL(0, 153, 153, 255);
+            GREEN(25, 51, 0, 255), LIME_GREEN(128, 255, 0, 255), FOREST_GREEN(0, 51, 0, 255), CYAN(0, 255, 255, 255), TEAL(0, 153, 153, 255);
+
+    /*
+        SDL Graphics Engine Implementation
+    */
 
     class SDL_GraphicsEngine {
-    private:
-        SDL_Renderer* renderer = nullptr;
-        SDL_Window* window     = nullptr;
     public:
         SDL_GraphicsEngine() {}
         ~SDL_GraphicsEngine() {
@@ -96,19 +102,45 @@ namespace blsp
             SDL_DestroyWindow(window);
             SDL_Quit();
         };
-
+    private:
+        SDL_Renderer* renderer = nullptr;
+        SDL_Window* window     = nullptr;
+        SDL_Event event;
+        TTF_Font* font;
     public:
         bool done = false;
         std::string appName;
+    private:
+        high_resolution_clock::time_point start;
+        high_resolution_clock::time_point finish;
     public:
         virtual void OnUserCreate() = 0;
+        virtual bool OnUserUpdate(float elaspedTimeMS) = 0;
     public:
+        void Tick() {
+            while (1) {
+                if (SDL_PollEvent(&event) && event.type == SDL_QUIT) break;
+                finish = high_resolution_clock::now();
+                float elaspedTimeMS = ((float)(duration_cast<microseconds>(this->finish - this->start).count())) * 1000.f;
+                if (OnUserUpdate(elaspedTimeMS)) {
+                    start = high_resolution_clock::now();
+                }
+            }
+        }
         void ConstructWindow(uint32_t width, uint32_t height) {
+            OnUserCreate();
             SDL_Init(SDL_INIT_VIDEO);
             SDL_CreateWindowAndRenderer(width, height, 0, &window, &renderer);
-            OnUserCreate();
+            TTF_Init();
+            font = TTF_OpenFont("./RobotoRegular.ttf", 13);
+            if (!font) {
+                std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
+            }
             SDL_SetWindowTitle(window, appName.c_str());
+            start = high_resolution_clock::now();
+            Tick();
         }
+    public:
         void SetDrawColor(Color color) {
             SDL_SetRenderDrawColor(renderer, color.x, color.y, color.z, color.a);
         }
@@ -120,9 +152,9 @@ namespace blsp
             SDL_RenderPresent(renderer);
         }
     public:
-        void DrawPixel(Color color, uint32_t i, uint32_t j) {
+        void DrawPixel(Color color, uint32_t x, uint32_t y) {
             SetDrawColor(color);
-            SDL_RenderDrawPoint(renderer, i, j);
+            SDL_RenderDrawPoint(renderer, x, y);
         }
         void DrawLine(Color color, vector2i start, vector2i end) {
             SetDrawColor(color);
@@ -137,6 +169,13 @@ namespace blsp
             SetDrawColor(color);
             SDL_Rect rect = { pos.x, pos.y, size.x, size.y };
             SDL_RenderFillRect(renderer, &rect);
+        }
+        void DrawString(Color color, std::string& text) {
+            SDL_Color sdl_Color = { 255, 255, 255 };
+            SDL_Surface* surface = TTF_RenderText_Solid(font, text.c_str(), sdl_Color);
+            SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+            SDL_Rect rect = { 0, 0, text.size() * 7, 13};
+            SDL_RenderCopy(renderer, texture, NULL, &rect);
         }
     };
 }
