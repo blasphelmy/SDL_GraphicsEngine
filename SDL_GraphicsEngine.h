@@ -8,11 +8,11 @@ namespace blsp
     class vector2d {
     public:
         TYPE x, y;
-        vector2d() { this->x = 0; this->y = 0; }
-        vector2d(TYPE xy) { this->x = xy; this->y = xy; }
-        vector2d(TYPE x, TYPE y) { this->x = x; this->y = y; }
+        vector2d()                                { this->x = 0; this->y = 0; }
+        vector2d(TYPE xy)                         { this->x = xy; this->y = xy; }
+        vector2d(TYPE x, TYPE y)                  { this->x = x; this->y = y; }
 
-        void setAll(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
+        void setAll(TYPE xyz)                     { this->x = xyz; this->y = xyz; }
 
         vector2d operator + (vector2d const& obj) { vector2d result; result.x = x + obj.x; result.y = y + obj.y; return result; }
         vector2d operator - (vector2d const& obj) { vector2d result; result.x = x - obj.x; result.y = y - obj.y; return result; }
@@ -27,11 +27,11 @@ namespace blsp
     class vector3d {
     public:
         TYPE x, y, z;
-        vector3d() { this->x = 0; this->y = 0; this->z = 0; }
-        vector3d(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
-        vector3d(TYPE x, TYPE y, TYPE z) { this->x = x; this->y = y; this->z = z; }
+        vector3d()                                { this->x = 0; this->y = 0; this->z = 0; }
+        vector3d(TYPE xyz)                        { this->x = xyz; this->y = xyz; this->z = xyz; }
+        vector3d(TYPE x, TYPE y, TYPE z)          { this->x = x; this->y = y; this->z = z; }
 
-        void setAll(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
+        void setAll(TYPE xyz)                     { this->x = xyz; this->y = xyz; this->z = xyz; }
 
         vector3d operator + (vector3d const& obj) { vector3d result; result.x = x + obj.x; result.y = y + obj.y; result.z = z + obj.z; return result; }
         vector3d operator - (vector3d const& obj) { vector3d result; result.x = x - obj.x; result.y = y - obj.y; result.z = z - obj.z; return result; }
@@ -46,9 +46,9 @@ namespace blsp
     class vector4d {
     public:
         TYPE x, y, z, a;
-        vector4d() { this->x = 0; this->y = 0; this->z = 0; this->a = 0; }
-        vector4d(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
-        vector4d(TYPE x, TYPE y, TYPE z, TYPE a) { this->x = x; this->y = y; this->z = z; this->a = a; }
+        vector4d()                                { this->x = 0; this->y = 0; this->z = 0; this->a = 0; }
+        vector4d(TYPE xyz)                        { this->x = xyz; this->y = xyz; this->z = xyz; }
+        vector4d(TYPE x, TYPE y, TYPE z, TYPE a)  { this->x = x; this->y = y; this->z = z; this->a = a; }
 
         void setAll(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
 
@@ -80,15 +80,7 @@ namespace blsp
     typedef vector4d<uint16_t>    vector4i16t;
     typedef vector4d<uint8_t>     vector4di8t;
 
-    class Color : public vector4di8t {
-    public:
-        Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
-            this->x = r;
-            this->y = g;
-            this->z = b;
-            this->a = a;
-        }
-    };
+    class Color : public vector4di8t { public: Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) { this->x = r; this->y = g; this->z = b; this->a = a; } };
 
     static const Color RED(204, 0, 0, 255), DARK_RED(102, 0, 0, 255), ORANGE(255, 128, 0, 255), BROWN(102, 51, 0, 255), DARK_BROWN(51, 25, 0, 255),
         GREEN(25, 51, 0, 255), LIME_GREEN(128, 255, 0, 255), FOREST_GREEN(0, 51, 0, 255), CYAN(0, 255, 255, 255), TEAL(0, 153, 153, 255);
@@ -96,7 +88,7 @@ namespace blsp
     class SDL_GraphicsEngine {
     private:
         SDL_Renderer* renderer = nullptr;
-        SDL_Window* window = nullptr;
+        SDL_Window* window     = nullptr;
     public:
         SDL_GraphicsEngine() {}
         ~SDL_GraphicsEngine() {
