@@ -121,7 +121,7 @@ namespace blsp
             while (1) {
                 if (SDL_PollEvent(&event) && event.type == SDL_QUIT) break;
                 finish = high_resolution_clock::now();
-                float elaspedTimeMS = ((float)(duration_cast<microseconds>(this->finish - this->start).count())) * 1000.f;
+                float elaspedTimeMS = ((float)(duration_cast<microseconds>(this->finish - this->start).count())) / 1000.f;
                 if (OnUserUpdate(elaspedTimeMS)) {
                     start = high_resolution_clock::now();
                 }
