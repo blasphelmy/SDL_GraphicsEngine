@@ -1,0 +1,31 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32901.215
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SDL_GraphicsEngine", "SDL_GraphicsEngine.vcxproj", "{68967A0E-B898-4FF1-BEE8-ED801D5DFAED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
+		Release|x64 = Release|x64
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{68967A0E-B898-4FF1-BEE8-ED801D5DFAED}.Debug|x64.ActiveCfg = Debug|x64
+		{68967A0E-B898-4FF1-BEE8-ED801D5DFAED}.Debug|x64.Build.0 = Debug|x64
+		{68967A0E-B898-4FF1-BEE8-ED801D5DFAED}.Debug|x86.ActiveCfg = Debug|Win32
+		{68967A0E-B898-4FF1-BEE8-ED801D5DFAED}.Debug|x86.Build.0 = Debug|Win32
+		{68967A0E-B898-4FF1-BEE8-ED801D5DFAED}.Release|x64.ActiveCfg = Release|x64
+		{68967A0E-B898-4FF1-BEE8-ED801D5DFAED}.Release|x64.Build.0 = Release|x64
+		{68967A0E-B898-4FF1-BEE8-ED801D5DFAED}.Release|x86.ActiveCfg = Release|Win32
+		{68967A0E-B898-4FF1-BEE8-ED801D5DFAED}.Release|x86.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {A1C44CBC-DA2D-4C0F-9315-E7A761740434}
+	EndGlobalSection
+EndGlobal
