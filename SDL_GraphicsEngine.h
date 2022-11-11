@@ -70,22 +70,25 @@ namespace blsp
     typedef vector2d<float>       vector2f;
     typedef vector2d<double>      vector2db;
     typedef vector2d<long double> vector2ld;
+    typedef vector2d<uint32_t>    vector2i32t;
     typedef vector2d<uint16_t>    vector2i16t;
     typedef vector2d<uint8_t>     vector2di8t;
 
     typedef vector3d<int>         vector3i;
     typedef vector3d<float>       vector3f;
+    typedef vector3d<double>      vector3db;
     typedef vector3d<long double> vector3ld;
     typedef vector3d<uint16_t>    vector3i16t;
     typedef vector3d<uint8_t>     vector3di8t;
 
     typedef vector4d<int>         vector4i;
     typedef vector4d<float>       vector4f;
+    typedef vector4d<double>      vector4db;
     typedef vector4d<long double> vector4ld;
     typedef vector4d<uint16_t>    vector4i16t;
     typedef vector4d<uint8_t>     vector4di8t;
 
-    class Color : public vector4di8t { public: Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) { this->x = r; this->y = g; this->z = b; this->a = a; } };
+    struct Color : public vector4di8t { Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) { this->x = r; this->y = g; this->z = b; this->a = a; } };
 
     static const Color RED(204, 0, 0, 255), DARK_RED(102, 0, 0, 255), ORANGE(255, 128, 0, 255), BROWN(102, 51, 0, 255), DARK_BROWN(51, 25, 0, 255),
             GREEN(25, 51, 0, 255), LIME_GREEN(128, 255, 0, 255), FOREST_GREEN(0, 51, 0, 255), CYAN(0, 255, 255, 255), TEAL(0, 153, 153, 255);
@@ -100,6 +103,7 @@ namespace blsp
         ~SDL_GraphicsEngine() {
             SDL_DestroyRenderer(renderer);
             SDL_DestroyWindow(window);
+            TTF_CloseFont(font);
             SDL_Quit();
         };
     private:
@@ -116,9 +120,18 @@ namespace blsp
     public:
         virtual void OnUserCreate() = 0;
         virtual bool OnUserUpdate(float elaspedTimeMS) = 0;
-    public:
+    private:
+        void SetUpComponents(uint32_t width, uint32_t height) {
+            SDL_Init                    (SDL_INIT_VIDEO);
+            SDL_CreateWindowAndRenderer (width, height, 0, &window, &renderer);
+            TTF_Init                    ();
+            font                        = TTF_OpenFont("./RobotoRegular.ttf", 13);
+            SDL_SetWindowTitle          (window, appName.c_str());
+        }
         void Tick() {
+            start = high_resolution_clock::now();
             while (1) {
+                //std::this_thread::sleep_for(milliseconds(10));
                 if (SDL_PollEvent(&event) && event.type == SDL_QUIT) break;
                 finish = high_resolution_clock::now();
                 float elaspedTimeMS = ((float)(duration_cast<microseconds>(this->finish - this->start).count())) / 1000.f;
@@ -127,17 +140,10 @@ namespace blsp
                 }
             }
         }
+    public:
         void ConstructWindow(uint32_t width, uint32_t height) {
             OnUserCreate();
-            SDL_Init(SDL_INIT_VIDEO);
-            SDL_CreateWindowAndRenderer(width, height, 0, &window, &renderer);
-            TTF_Init();
-            font = TTF_OpenFont("./RobotoRegular.ttf", 13);
-            if (!font) {
-                std::cout << "Failed to load font: " << TTF_GetError() << std::endl;
-            }
-            SDL_SetWindowTitle(window, appName.c_str());
-            start = high_resolution_clock::now();
+            SetUpComponents(width, height);
             Tick();
         }
     public:
@@ -152,30 +158,178 @@ namespace blsp
             SDL_RenderPresent(renderer);
         }
     public:
-        void DrawPixel(Color color, uint32_t x, uint32_t y) {
+        void DrawPixel(Color color, float x, float y) {
             SetDrawColor(color);
             SDL_RenderDrawPoint(renderer, x, y);
         }
-        void DrawLine(Color color, vector2i start, vector2i end) {
+        void DrawPixel(Color color, int x, int y) {
+            DrawPixel(color, (float)x, float(y));
+        }
+        void DrawPixel(Color color, uint32_t x, uint32_t y) {
+            DrawPixel(color, (float)x, (float)y);
+        }
+
+        void DrawLine(Color color, float x, float y, float x2, float y2) {
             SetDrawColor(color);
-            SDL_RenderDrawLine(renderer, start.x, start.y, end.x, end.y);
+            SDL_RenderDrawLineF(renderer, x, y, x2, y2);
+        }
+        void DrawLine(Color color, vector2i start, vector2i end) {
+            DrawLine(color, (float)start.x, (float)start.y, (float)end.x, (float)end.y);
+        }
+        void DrawLine(Color color, vector2i32t start, vector2i32t end) {
+            DrawLine(color, (float)start.x, (float)start.y, (float)end.x, (float)end.y);
+        }
+        void DrawLine(Color color, vector2f start, vector2f end) {
+            DrawLine(color, start.x, start.y, end.x, end.y);
+        }
+
+        void DrawRectOutline(Color color, float x, float y, float x2, float y2) {
+            SetDrawColor(color);
+            SDL_FRect rect = { x, y, x2, y2 };
+            SDL_RenderDrawRectF(renderer, &rect);
         }
         void DrawRectOutline(Color color, vector2i pos, vector2i size) {
+            DrawRectOutline(color, (float)pos.x, (float)pos.y, (float)size.x, (float)size.y);
+        }
+        void DrawRectOutline(Color color, vector2i32t pos, vector2i32t size) {
+            DrawRectOutline(color, (float)pos.x, (float)pos.y, (float)size.x, (float)size.y);
+        }
+        void DrawRectOutline(Color color, vector2f pos, vector2f size) {
+            DrawRectOutline(color, pos.x, pos.y, size.x, size.y);
+        }
+
+        void DrawRectFill(Color color, float x, float y, float x2, float y2) {
             SetDrawColor(color);
-            SDL_Rect rect = { pos.x, pos.y, size.x, size.y };
-            SDL_RenderDrawRect(renderer, &rect);
+            SDL_FRect rect = { x, y, x2, y2 };
+            SDL_RenderFillRectF(renderer, &rect);
         }
         void DrawRectFill(Color color, vector2i pos, vector2i size) {
-            SetDrawColor(color);
-            SDL_Rect rect = { pos.x, pos.y, size.x, size.y };
-            SDL_RenderFillRect(renderer, &rect);
+            DrawRectFill(color, (float)pos.x, (float)pos.y, (float)size.x, (float)size.y);
         }
-        void DrawString(Color color, std::string& text) {
-            SDL_Color sdl_Color = { 255, 255, 255 };
+        void DrawRectFill(Color color, vector2i32t pos, vector2i32t size) {
+            DrawRectFill(color, (float)pos.x, (float)pos.y, (float)size.x, (float)size.y);
+        }
+        void DrawRectFill(Color color, vector2f pos, vector2f size) {
+            DrawRectFill(color, pos.x, pos.y, size.x, size.y);
+        }
+
+        void DrawRoundedRectFill(Color color, float posx, float posy, int sizex, int sizey, int radius) {
+            SetDrawColor(color);
+            if (sizex % 2 == 0) sizex = sizex - 1;
+            if (sizey % 2 == 0) sizey = sizey - 1;
+
+            float x0 = posx + (sizex / 2);
+            float y0 = posy + (sizey / 2);
+            float x = radius - 1;
+            float y = 0;
+            float dx = 1;
+            float dy = 1;
+            int err = dx - (radius << 1);
+            while (x >= y) {
+                SDL_RenderDrawLineF(renderer, x0 + y + (sizex / 2) - radius, y0 + x + (sizey / 2) - radius, x0 - y - (sizex / 2) + radius, y0 + x + (sizey / 2) - radius);
+                SDL_RenderDrawLineF(renderer, x0 + x + (sizex / 2) - radius, y0 + y + (sizey / 2) - radius, x0 - x - (sizex / 2) + radius, y0 + y + (sizey / 2) - radius);
+                SDL_RenderDrawLineF(renderer, x0 + x + (sizex / 2) - radius, y0 - y - (sizey / 2) + radius, x0 - x - (sizex / 2) + radius, y0 - y - (sizey / 2) + radius);
+                SDL_RenderDrawLineF(renderer, x0 + y + (sizex / 2) - radius, y0 - x - (sizey / 2) + radius, x0 - y - (sizex / 2) + radius, y0 - x - (sizey / 2) + radius);
+                if (err <= 0)
+                {
+                    y++;
+                    err += dy;
+                    dy += 2;
+                }
+
+                if (err > 0)
+                {
+                    x--;
+                    dx += 2;
+                    err += dx - (radius << 1);
+                }
+            }
+            SDL_FRect rect = { posx, posy + radius, sizex, sizey - (radius * 2) };
+            SDL_RenderFillRectF(renderer, &rect);
+        }
+        void DrawRoundedRectFill(Color color, vector2f pos, vector2i size, int radius) {
+            DrawRoundedRectFill(color, pos.x, pos.y, size.x, size.y, radius);
+        }
+
+
+        //https://en.wikipedia.org/w/index.php?title=Midpoint_circle_algorithm&oldid=889172082#C_example
+        void DrawCircleOutline(Color color, float x0, float y0, int radius) {
+            SetDrawColor(color);
+            float x = radius - 1;
+            float y = 0;
+            float dx = 1;
+            float dy = 1;
+            float err = dx - (radius << 1);
+            while (x >= y) {
+                SDL_RenderDrawPoint(renderer, x0 + x, y0 + y);
+                SDL_RenderDrawPoint(renderer, x0 + y, y0 + x);
+                SDL_RenderDrawPoint(renderer, x0 - y, y0 + x);
+                SDL_RenderDrawPoint(renderer, x0 - x, y0 + y);
+                SDL_RenderDrawPoint(renderer, x0 - x, y0 - y);
+                SDL_RenderDrawPoint(renderer, x0 - y, y0 - x);
+                SDL_RenderDrawPoint(renderer, x0 + y, y0 - x);
+                SDL_RenderDrawPoint(renderer, x0 + x, y0 - y);
+                if (err <= 0)
+                {
+                    y++;
+                    err += dy;
+                    dy += 2;
+                }
+
+                if (err > 0)
+                {
+                    x--;
+                    dx += 2;
+                    err += dx - (radius << 1);
+                }
+            }
+        }
+        void DrawCircleOutline(Color color, vector2f pos, int radius) {
+            DrawCircleOutline(color, pos.x, pos.y, radius);
+        }
+
+        void DrawCircleFill(Color color, float x0, float y0, int radius) {
+            SetDrawColor(color);
+            float x = radius - 1;
+            float y = 0;
+            float dx = 1;
+            float dy = 1;
+            int err = dx - (radius << 1);
+            while (x >= y) {
+                SDL_RenderDrawLineF(renderer, x0 + y, y0 + x, x0 - y, y0 + x);
+                SDL_RenderDrawLineF(renderer, x0 + x, y0 + y, x0 - x, y0 + y);
+                SDL_RenderDrawLineF(renderer, x0 + x, y0 - y, x0 - x, y0 - y);
+                SDL_RenderDrawLineF(renderer, x0 + y, y0 - x, x0 - y, y0 - x);
+                if (err <= 0)
+                {
+                    y++;
+                    err += dy;
+                    dy += 2;
+                }
+
+                if (err > 0)
+                {
+                    x--;
+                    dx += 2;
+                    err += dx - (radius << 1);
+                }
+            }
+        }
+        void DrawCircleFill(Color color, vector2f pos, int radius) {
+            DrawCircleFill(color, pos.x, pos.y, radius);
+        }
+
+        void DrawString(uint8_t r, uint8_t g, uint8_t b, std::string& text, float x, float y) {
+            SDL_Color sdl_Color = { r, g, b};
             SDL_Surface* surface = TTF_RenderText_Solid(font, text.c_str(), sdl_Color);
             SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-            SDL_Rect rect = { 0, 0, text.size() * 7, 13};
+            SDL_Rect rect = { x, y, text.size() * 7, 13 };
             SDL_RenderCopy(renderer, texture, NULL, &rect);
+            SDL_DestroyTexture(texture);
+            SDL_FreeSurface(surface);
+        }
+        void DrawString(Color color, std::string& text, vector2i pos) {
+            DrawString(color.x, color.y, color.z, text, (float)pos.x, (float)pos.y);
         }
     };
 }
