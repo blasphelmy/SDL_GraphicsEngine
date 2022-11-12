@@ -38,6 +38,32 @@ public:
         DrawString(blsp::RED, time, blsp::vector2i(0, 0));
 
         if (GetKey(blsp::A).pressed) keyboardtest += "a";
+        if (GetKey(blsp::B).pressed) keyboardtest += "b";
+        if (GetKey(blsp::C).pressed) keyboardtest += "c";
+        if (GetKey(blsp::D).pressed) keyboardtest += "d";
+        if (GetKey(blsp::E).pressed) keyboardtest += "e";
+        if (GetKey(blsp::F).pressed) keyboardtest += "f";
+        if (GetKey(blsp::G).pressed) keyboardtest += "g";
+        if (GetKey(blsp::H).pressed) keyboardtest += "h";
+        if (GetKey(blsp::I).pressed) keyboardtest += "i";
+        if (GetKey(blsp::J).pressed) keyboardtest += "j";
+        if (GetKey(blsp::K).pressed) keyboardtest += "k";
+        if (GetKey(blsp::L).pressed) keyboardtest += "l";
+        if (GetKey(blsp::M).pressed) keyboardtest += "m";
+        if (GetKey(blsp::N).pressed) keyboardtest += "n";
+        if (GetKey(blsp::O).pressed) keyboardtest += "o";
+        if (GetKey(blsp::P).pressed) keyboardtest += "p";
+        if (GetKey(blsp::Q).pressed) keyboardtest += "q";
+        if (GetKey(blsp::R).pressed) keyboardtest += "r";
+        if (GetKey(blsp::S).pressed) keyboardtest += "s";
+        if (GetKey(blsp::T).pressed) keyboardtest += "t";
+        if (GetKey(blsp::U).pressed) keyboardtest += "u";
+        if (GetKey(blsp::V).pressed) keyboardtest += "v";
+        if (GetKey(blsp::W).pressed) keyboardtest += "w";
+        if (GetKey(blsp::X).pressed) keyboardtest += "x";
+        if (GetKey(blsp::Y).pressed) keyboardtest += "y";
+        if (GetKey(blsp::Z).pressed) keyboardtest += "z";
+
         DrawString(blsp::RED, keyboardtest, blsp::vector2i(0, 10));
         
         RenderScreen();

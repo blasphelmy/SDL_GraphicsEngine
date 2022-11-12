@@ -151,12 +151,9 @@ namespace blsp
     private:
         bool keyListener() {
             SDL_PollEvent(&event);
-            switch (event.type) {
-                case SDL_QUIT: return true; break;
-                case SDL_KEYDOWN:
-                    switch (event.key.keysym.sym) {
-                        case SDLK_a: keyboardbuttons.keyStates[A].pressed = true;
-                    }
+            if (event.type == SDL_QUIT) return true;
+            if (event.type == SDL_KEYDOWN) {
+                keyboardbuttons.keyStates[event.key.keysym.sym].pressed = true;
             }
             return false;
         }
