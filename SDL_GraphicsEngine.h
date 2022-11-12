@@ -4,6 +4,8 @@
 #include <SDL_ttf.h>
 #include <chrono>
 #include <thread>
+#include <vector>
+#include <map>
 namespace blsp
 {
     using std::chrono::high_resolution_clock;
@@ -18,7 +20,6 @@ namespace blsp
         vector2d()                                { this->x = 0;  this->y = 0; }
         vector2d(TYPE xy)                         { this->x = xy; this->y = xy; }
         vector2d(TYPE x, TYPE y)                  { this->x = x;  this->y = y; }
-
         void setAll(TYPE xyz)                     { this->x = xyz; this->y = xyz; }
 
         vector2d operator + (vector2d const& obj) { vector2d result; result.x = x + obj.x; result.y = y + obj.y; return result; }
@@ -27,7 +28,7 @@ namespace blsp
         vector2d operator / (vector2d const& obj) { vector2d result; result.x = x / obj.x; result.y = y / obj.y; return result; }
 
         template<class TYPE>
-        vector2d<TYPE> cast_to() { return vector2d<TYPE>{ static_cast<TYPE>(x), static_cast<TYPE>(y) }; };
+        vector2d<TYPE> cast_to()                  { return vector2d<TYPE>{ static_cast<TYPE>(x), static_cast<TYPE>(y) }; };
     };
 
     template<class TYPE>
@@ -36,7 +37,6 @@ namespace blsp
         vector3d()                                { this->x = 0;   this->y = 0;   this->z = 0; }
         vector3d(TYPE xyz)                        { this->x = xyz; this->y = xyz; this->z = xyz; }
         vector3d(TYPE x, TYPE y, TYPE z)          { this->x = x;   this->y = y;   this->z = z; }
-
         void setAll(TYPE xyz)                     { this->x = xyz; this->y = xyz; this->z = xyz; }
 
         vector3d operator + (vector3d const& obj) { vector3d result; result.x = x + obj.x; result.y = y + obj.y; result.z = z + obj.z; return result; }
@@ -45,7 +45,7 @@ namespace blsp
         vector3d operator / (vector3d const& obj) { vector3d result; result.x = x / obj.x; result.y = y / obj.y; result.z = z / obj.z; return result; }
 
         template<class TYPE>
-        vector3d<TYPE> cast_to() { return vector3d<TYPE>{ static_cast<TYPE>(x), static_cast<TYPE>(y), static_cast<TYPE>(z) }; };
+        vector3d<TYPE> cast_to()                  { return vector3d<TYPE>{ static_cast<TYPE>(x), static_cast<TYPE>(y), static_cast<TYPE>(z) }; };
     };
 
     template<class TYPE>
@@ -54,8 +54,7 @@ namespace blsp
         vector4d()                                { this->x = 0;   this->y = 0;   this->z = 0; this->a = 0; }
         vector4d(TYPE xyz)                        { this->x = xyz; this->y = xyz; this->z = xyz; }
         vector4d(TYPE x, TYPE y, TYPE z, TYPE a)  { this->x = x;   this->y = y;   this->z = z; this->a = a; }
-
-        void setAll(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
+        void setAll(TYPE xyz)                     { this->x = xyz; this->y = xyz; this->z = xyz; }
 
         vector4d operator + (vector4d const& obj) { vector4d result; result.x = x + obj.x; result.y = y + obj.y; result.z = z + obj.z; return result; }
         vector4d operator - (vector4d const& obj) { vector4d result; result.x = x - obj.x; result.y = y - obj.y; result.z = z - obj.z; return result; }
@@ -63,7 +62,7 @@ namespace blsp
         vector4d operator / (vector4d const& obj) { vector4d result; result.x = x / obj.x; result.y = y / obj.y; result.z = z / obj.z; return result; }
 
         template<class TYPE>
-        vector4d<TYPE> cast_to() { return vector4d<TYPE>{ static_cast<TYPE>(x), static_cast<TYPE>(y), static_cast<TYPE>(z), static_cast<TYPE>(a) }; };
+        vector4d<TYPE> cast_to()                  { return vector4d<TYPE>{ static_cast<TYPE>(x), static_cast<TYPE>(y), static_cast<TYPE>(z), static_cast<TYPE>(a) }; };
     };
 
     typedef vector2d<int>         vector2i;
@@ -97,6 +96,18 @@ namespace blsp
         SDL Graphics Engine Implementation
     */
 
+    typedef enum {
+        A = 'a', B = 'b', C = 'c', D = 'd', E = 'e', F = 'f', G = 'g', H = 'h', I = 'i', J = 'j', K = 'k', L = 'l', M = 'm', 
+        N = 'n', O = 'o', P = 'p', Q = 'q', R = 'r', S = 's', T = 't', U = 'u', V = 'v', W = 'w', X = 'x', Y = 'y', Z = 'z'
+
+    };
+
+    struct keyState {
+        bool pressed = false;
+        //bool release = false;
+        //bool held    = false;
+    };
+
     class SDL_GraphicsEngine {
     public:
         SDL_GraphicsEngine() {}
@@ -107,19 +118,48 @@ namespace blsp
             SDL_Quit();
         };
     private:
+        struct keys {
+            std::map<int, keyState> keyStates;
+            void resetKeys() {
+                for (auto &x : keyStates) {
+                    x.second.pressed = false;
+                }
+            }
+        };
+    private:
         SDL_Renderer* renderer = nullptr;
         SDL_Window* window     = nullptr;
         SDL_Event event;
         TTF_Font* font;
+        keys keyboardbuttons;
     public:
         bool done = false;
+    protected:
         std::string appName;
     private:
         high_resolution_clock::time_point start;
         high_resolution_clock::time_point finish;
     public:
         virtual void OnUserCreate() = 0;
-        virtual bool OnUserUpdate(float elaspedTimeMS) = 0;
+        virtual bool OnUserUpdate(double elaspedTimeMS) = 0;
+    public:
+        void ConstructWindow(uint32_t width, uint32_t height) {
+            OnUserCreate();
+            SetUpComponents(width, height);
+            Tick();
+        }
+    private:
+        bool keyListener() {
+            SDL_PollEvent(&event);
+            switch (event.type) {
+                case SDL_QUIT: return true; break;
+                case SDL_KEYDOWN:
+                    switch (event.key.keysym.sym) {
+                        case SDLK_a: keyboardbuttons.keyStates[A].pressed = true;
+                    }
+            }
+            return false;
+        }
     private:
         void SetUpComponents(uint32_t width, uint32_t height) {
             SDL_Init                    (SDL_INIT_VIDEO);
@@ -127,26 +167,46 @@ namespace blsp
             TTF_Init                    ();
             font                        = TTF_OpenFont("./RobotoRegular.ttf", 13);
             SDL_SetWindowTitle          (window, appName.c_str());
+            keyboardbuttons.keyStates = {
+                std::make_pair(A, keyState()), std::make_pair(B, keyState()), std::make_pair(C, keyState()), std::make_pair(D, keyState()), std::make_pair(E, keyState()), std::make_pair(F, keyState()), std::make_pair(G, keyState()), 
+                std::make_pair(H, keyState()), std::make_pair(I, keyState()), std::make_pair(J, keyState()), std::make_pair(K, keyState()), std::make_pair(L, keyState()), std::make_pair(M, keyState()), std::make_pair(N, keyState()), 
+                std::make_pair(O, keyState()), std::make_pair(P, keyState()), std::make_pair(Q, keyState()), std::make_pair(R, keyState()), std::make_pair(S, keyState()), std::make_pair(T, keyState()), std::make_pair(U, keyState()), 
+                std::make_pair(V, keyState()), std::make_pair(W, keyState()), std::make_pair(X, keyState()),  std::make_pair(Y, keyState()), std::make_pair(Z, keyState()),
+
+            };
         }
         void Tick() {
             start = high_resolution_clock::now();
-            while (1) {
-                //std::this_thread::sleep_for(milliseconds(10));
+            while (!keyListener()) {
                 if (SDL_PollEvent(&event) && event.type == SDL_QUIT) break;
                 finish = high_resolution_clock::now();
-                float elaspedTimeMS = ((float)(duration_cast<microseconds>(this->finish - this->start).count())) / 1000.f;
+                double elaspedTimeMS = ((double)(duration_cast<microseconds>(this->finish - this->start).count())) / 1000.f;
                 if (OnUserUpdate(elaspedTimeMS)) {
                     start = high_resolution_clock::now();
                 }
+                keyboardbuttons.resetKeys();
             }
         }
-    public:
-        void ConstructWindow(uint32_t width, uint32_t height) {
-            OnUserCreate();
-            SetUpComponents(width, height);
-            Tick();
+    protected:
+        Color AdjustColorSat(Color colorVector, float f, float r_bias = 0.3, float g_bias = 0.6, float b_bias = 0.1) {
+            float r = (float)colorVector.x;
+            float g = (float)colorVector.y;
+            float b = (float)colorVector.z;
+
+            float L = r_bias * r
+                + g_bias * g
+                + b_bias * b;
+
+            float new_r = r + f * (L - r);
+            float new_g = g + f * (L - g);
+            float new_b = b + f * (L - b);
+            return Color((int)new_r, (int)new_g, (int)new_b, colorVector.a);
+        };
+    protected:
+        keyState GetKey(char keyName) {
+            return keyboardbuttons.keyStates[keyName];
         }
-    public:
+    protected:
         void SetDrawColor(Color color) {
             SDL_SetRenderDrawColor(renderer, color.x, color.y, color.z, color.a);
         }
@@ -157,7 +217,8 @@ namespace blsp
         void RenderScreen() {
             SDL_RenderPresent(renderer);
         }
-    public:
+
+    protected:
         void DrawPixel(Color color, float x, float y) {
             SetDrawColor(color);
             SDL_RenderDrawPoint(renderer, x, y);
@@ -236,7 +297,6 @@ namespace blsp
                     err += dy;
                     dy += 2;
                 }
-
                 if (err > 0)
                 {
                     x--;
@@ -244,7 +304,7 @@ namespace blsp
                     err += dx - (radius << 1);
                 }
             }
-            SDL_FRect rect = { posx, posy + radius, sizex, sizey - (radius * 2) };
+            SDL_FRect rect = { posx + 1, posy + radius, sizex - 2, sizey - (radius * 2) };
             SDL_RenderFillRectF(renderer, &rect);
         }
         void DrawRoundedRectFill(Color color, vector2f pos, vector2i size, int radius) {
@@ -330,6 +390,36 @@ namespace blsp
         }
         void DrawString(Color color, std::string& text, vector2i pos) {
             DrawString(color.x, color.y, color.z, text, (float)pos.x, (float)pos.y);
+        }
+
+        void DrawTriangleFill(float ax, float ay, float bx, float by, float cx, float cy, Color a, Color b, Color c) {
+            const std::vector<SDL_Vertex> verts =
+            {
+                { SDL_FPoint{ ax, ay }, SDL_Color{ a.x, a.y, a.z, a.a }, SDL_FPoint{ 0 }, },
+                { SDL_FPoint{ bx, by }, SDL_Color{ b.x, b.y, b.z, b.a }, SDL_FPoint{ 0 }, },
+                { SDL_FPoint{ cx, cy }, SDL_Color{ c.x, c.y, c.z, c.a }, SDL_FPoint{ 0 }, },
+            };
+            SDL_RenderGeometry(renderer, nullptr, verts.data(), verts.size(), nullptr, 0);
+        }
+        void DrawTriangleFill(vector2f apos, vector2f bpos, vector2f cpos, Color a, Color b, Color c) {
+            DrawTriangleFill(apos.x, apos.y, bpos.x, bpos.y, cpos.x, cpos.y, a, b, c);
+        }
+
+        void DrawTriangleOutline(Color color, float ax, float ay, float bx, float by, float cx, float cy) {
+            SetDrawColor(color);
+            SDL_RenderDrawLineF(renderer, ax, ay, bx, by);
+            SDL_RenderDrawLineF(renderer, ax, ay, cx, cy);
+            SDL_RenderDrawLineF(renderer, cx, cy, bx, by);
+        }
+        void DrawTriangleOutline(Color color, vector2f a, vector2f b, vector2f c) {
+            DrawTriangleOutline(color, a.x, a.y, b.x, b.y, c.x, c.y);
+        }
+
+        SDL_Vertex CreatePoint(float x, float y, Color color) {
+            return { SDL_FPoint{x, y}, SDL_Color{color.x, color.y, color.z, color.a}, SDL_FPoint{0} };
+        }
+        void DrawGeometry(std::vector<SDL_Vertex> mesh) {
+            SDL_RenderGeometry(renderer, nullptr, mesh.data(), mesh.size(), nullptr, 0);
         }
     };
 }
