@@ -21,7 +21,7 @@ public:
     void OnUserCreate() override {
     }
     bool OnUserUpdate(double elaspedTimeMS) override {
-        ClearPixels(blsp::Color(0, 0, 0, 0));
+        ClearPixels(blsp::Color(40, 40, 40, 0));
         DrawPixel(blsp::LIME_GREEN, 50, 50);
         DrawRoundedRectFill(blsp::CYAN, 350, 350, 200, 350, 30);
         DrawLine(blsp::LIME_GREEN, blsp::vector2i(20, 20), blsp::vector2i(100, 120));
@@ -63,8 +63,16 @@ public:
         if (GetKey(blsp::X).pressed) keyboardtest += "x";
         if (GetKey(blsp::Y).pressed) keyboardtest += "y";
         if (GetKey(blsp::Z).pressed) keyboardtest += "z";
+        if (GetKey(blsp::SPACE).pressed) keyboardtest += " ";
+        if (GetKey(blsp::ARROW_KEYS::RIGHT_ARROW).pressed) keyboardtest += ">";
+        if (GetKey(blsp::BKSP).pressed) keyboardtest.pop_back();
 
-        DrawString(blsp::RED, keyboardtest, blsp::vector2i(0, 10));
+        if (GetMouseState(blsp::MOUSE_EVENTS::LEFT_CLICK).pressed) {
+            std::string clicked = "Left clicked!";
+            DrawString(blsp::CYAN, clicked, blsp::vector2i(0, 32));
+        }
+
+        DrawString(blsp::CYAN, keyboardtest, blsp::vector2i(0, 16));
         
         RenderScreen();
         return true;

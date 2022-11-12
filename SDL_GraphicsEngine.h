@@ -6,8 +6,19 @@
 #include <thread>
 #include <vector>
 #include <map>
+#include <unordered_map>
 namespace blsp
 {
+    //utils, thanks javid..
+
+    std::string hex(uint32_t n, uint8_t d)
+    {
+        std::string s(d, '0');
+        for (int i = d - 1; i >= 0; i--, n >>= 4)
+            s[i] = "0123456789ABCDEF"[n & 0xF];
+        return s;
+    };
+
     using std::chrono::high_resolution_clock;
     using std::chrono::duration_cast;
     using std::chrono::milliseconds;
@@ -21,6 +32,7 @@ namespace blsp
         vector2d(TYPE xy)                         { this->x = xy; this->y = xy; }
         vector2d(TYPE x, TYPE y)                  { this->x = x;  this->y = y; }
         void setAll(TYPE xyz)                     { this->x = xyz; this->y = xyz; }
+        void setXY(TYPE x, TYPE y)                { this->x = x; this->y = y; }
 
         vector2d operator + (vector2d const& obj) { vector2d result; result.x = x + obj.x; result.y = y + obj.y; return result; }
         vector2d operator - (vector2d const& obj) { vector2d result; result.x = x - obj.x; result.y = y - obj.y; return result; }
@@ -92,22 +104,33 @@ namespace blsp
     static const Color RED(204, 0, 0, 255), DARK_RED(102, 0, 0, 255), ORANGE(255, 128, 0, 255), BROWN(102, 51, 0, 255), DARK_BROWN(51, 25, 0, 255),
             GREEN(25, 51, 0, 255), LIME_GREEN(128, 255, 0, 255), FOREST_GREEN(0, 51, 0, 255), CYAN(0, 255, 255, 255), TEAL(0, 153, 153, 255);
 
-    /*
-        SDL Graphics Engine Implementation
-    */
-
-    typedef enum {
+    typedef enum KEYBOARD {
         A = 'a', B = 'b', C = 'c', D = 'd', E = 'e', F = 'f', G = 'g', H = 'h', I = 'i', J = 'j', K = 'k', L = 'l', M = 'm', 
-        N = 'n', O = 'o', P = 'p', Q = 'q', R = 'r', S = 's', T = 't', U = 'u', V = 'v', W = 'w', X = 'x', Y = 'y', Z = 'z'
-
+        N = 'n', O = 'o', P = 'p', Q = 'q', R = 'r', S = 's', T = 't', U = 'u', V = 'v', W = 'w', X = 'x', Y = 'y', Z = 'z',
+        NUM_0 = '0', NUM_1 = '1', NUM_2 = '2', NUM_3 = '3', NUM_4 = '4', NUM_5 = '5', NUM_6 = '6', NUM_7 = '7', NUM_8 = '8', NUM_9 = '9',
+        SPACE = ' ', BKSP = '\b'
     };
+    typedef enum ARROW_KEYS {
+        RIGHT_ARROW = 0x4f, LEFT_ARROW = 0x50, DOWN_ARROW = 0x51, UP_ARROW = 0x52
+    };
+
+    typedef enum MOUSE_EVENTS {
+        LEFT_CLICK = 0x01, SCROLL_BTN_CLICK = 0x02, RIGHT_CLICK = 0x03
+    };
+
+    int i = SDLK_0;
 
     struct keyState {
         bool pressed = false;
-        //bool release = false;
-        //bool held    = false;
     };
 
+    struct MouseButtonsState : public keyState {
+        bool released = true;
+    };
+
+    /*
+        SDL Graphics Engine Implementation
+    */
     class SDL_GraphicsEngine {
     public:
         SDL_GraphicsEngine() {}
@@ -118,24 +141,34 @@ namespace blsp
             SDL_Quit();
         };
     private:
-        struct keys {
-            std::map<int, keyState> keyStates;
+        struct buttons {
+            std::unordered_map<int, keyState> keyStates;
             void resetKeys() {
-                for (auto &x : keyStates) {
+                for (auto& x : keyStates) {
+                    if (x.first <= 0x03)
+                        continue;
+
                     x.second.pressed = false;
                 }
             }
         };
+        struct mouseButtons {
+            bool freezeMotion = false;
+            std::unordered_map<short, MouseButtonsState> keyStates;
+        };
     private:
-        SDL_Renderer* renderer = nullptr;
-        SDL_Window* window     = nullptr;
-        SDL_Event event;
-        TTF_Font* font;
-        keys keyboardbuttons;
+        SDL_Renderer*       renderer = nullptr;
+        SDL_Window*         window = nullptr;
+        SDL_Event           event;
+        TTF_Font*           font;
+        buttons             buttonStates;
+        mouseButtons        mouseButtonStates;
+
     public:
         bool done = false;
     protected:
         std::string appName;
+        vector2f mousePOS;
     private:
         high_resolution_clock::time_point start;
         high_resolution_clock::time_point finish;
@@ -150,26 +183,60 @@ namespace blsp
         }
     private:
         bool keyListener() {
+            bool isDragging = true;
             SDL_PollEvent(&event);
             if (event.type == SDL_QUIT) return true;
             if (event.type == SDL_KEYDOWN) {
-                keyboardbuttons.keyStates[event.key.keysym.sym].pressed = true;
+                buttonStates.keyStates[event.key.keysym.sym].pressed = true;
+                int i = event.key.keysym.sym;
+                int keycodes = i;
+                int arrow_keyMask = 0x000000ff;
+                keycodes = i & arrow_keyMask;
+                //79 right, 80 left, 81 down, 82 up
+                if (keycodes >= 0x46 && keycodes <= 0x52) {
+                    buttonStates.keyStates[keycodes].pressed = true;
+                }
+                return false;
+            }
+            if (event.type == SDL_MOUSEMOTION && !mouseButtonStates.freezeMotion) {
+                mousePOS.setXY(event.button.x, event.button.y);
+                return false;
+            }
+            if (event.type == SDL_MOUSEBUTTONDOWN && mouseButtonStates.keyStates[event.button.button].pressed == false) {
+                mouseButtonStates.freezeMotion = !mouseButtonStates.freezeMotion;
+                mouseButtonStates.keyStates[event.button.button].pressed = mouseButtonStates.keyStates[event.button.button].pressed ? false : true;
+                mouseButtonStates.keyStates[event.button.button].released = mouseButtonStates.keyStates[event.button.button].released ? false : true;
+                return false;
+            }
+            if (event.type == SDL_MOUSEBUTTONUP && mouseButtonStates.keyStates[event.button.button].pressed == true) {
+                //std::cout << "Button clicked! " + hex(event.button.button, 2) << std::endl;
+                mouseButtonStates.keyStates[event.button.button].pressed = mouseButtonStates.keyStates[event.button.button].pressed ? false : true;
+                mouseButtonStates.keyStates[event.button.button].released = mouseButtonStates.keyStates[event.button.button].released ? false : true;
+                mouseButtonStates.freezeMotion = !mouseButtonStates.freezeMotion;
+                return false;
             }
             return false;
         }
     private:
         void SetUpComponents(uint32_t width, uint32_t height) {
-            SDL_Init                    (SDL_INIT_VIDEO);
-            SDL_CreateWindowAndRenderer (width, height, 0, &window, &renderer);
-            TTF_Init                    ();
-            font                        = TTF_OpenFont("./RobotoRegular.ttf", 13);
-            SDL_SetWindowTitle          (window, appName.c_str());
-            keyboardbuttons.keyStates = {
-                std::make_pair(A, keyState()), std::make_pair(B, keyState()), std::make_pair(C, keyState()), std::make_pair(D, keyState()), std::make_pair(E, keyState()), std::make_pair(F, keyState()), std::make_pair(G, keyState()), 
-                std::make_pair(H, keyState()), std::make_pair(I, keyState()), std::make_pair(J, keyState()), std::make_pair(K, keyState()), std::make_pair(L, keyState()), std::make_pair(M, keyState()), std::make_pair(N, keyState()), 
-                std::make_pair(O, keyState()), std::make_pair(P, keyState()), std::make_pair(Q, keyState()), std::make_pair(R, keyState()), std::make_pair(S, keyState()), std::make_pair(T, keyState()), std::make_pair(U, keyState()), 
-                std::make_pair(V, keyState()), std::make_pair(W, keyState()), std::make_pair(X, keyState()),  std::make_pair(Y, keyState()), std::make_pair(Z, keyState()),
+            SDL_Init(SDL_INIT_VIDEO);
+            SDL_CreateWindowAndRenderer(width, height, 0, &window, &renderer);
+            TTF_Init();
+            font = TTF_OpenFont("./ubuntumono.ttf", 13);
+            SDL_SetWindowTitle(window, appName.c_str());
+            buttonStates.keyStates = {
+                std::make_pair(KEYBOARD::A, keyState()), std::make_pair(KEYBOARD::B, keyState()), std::make_pair(KEYBOARD::C, keyState()), std::make_pair(KEYBOARD::D, keyState()), std::make_pair(KEYBOARD::E, keyState()), std::make_pair(KEYBOARD::F, keyState()), std::make_pair(KEYBOARD::G, keyState()),
+                std::make_pair(KEYBOARD::H, keyState()), std::make_pair(KEYBOARD::I, keyState()), std::make_pair(KEYBOARD::J, keyState()), std::make_pair(KEYBOARD::K, keyState()), std::make_pair(KEYBOARD::L, keyState()), std::make_pair(KEYBOARD::M, keyState()), std::make_pair(KEYBOARD::N, keyState()),
+                std::make_pair(KEYBOARD::O, keyState()), std::make_pair(KEYBOARD::P, keyState()), std::make_pair(KEYBOARD::Q, keyState()), std::make_pair(KEYBOARD::R, keyState()), std::make_pair(KEYBOARD::S, keyState()), std::make_pair(KEYBOARD::T, keyState()), std::make_pair(KEYBOARD::U, keyState()),
+                std::make_pair(KEYBOARD::V, keyState()), std::make_pair(KEYBOARD::W, keyState()), std::make_pair(KEYBOARD::X, keyState()), std::make_pair(KEYBOARD::Y, keyState()), std::make_pair(KEYBOARD::Z, keyState()),
 
+                std::make_pair(KEYBOARD::NUM_0, keyState()), std::make_pair(KEYBOARD::NUM_1, keyState()), std::make_pair(KEYBOARD::NUM_2, keyState()), std::make_pair(KEYBOARD::NUM_3, keyState()), std::make_pair(KEYBOARD::NUM_4, keyState()),
+                std::make_pair(KEYBOARD::NUM_5, keyState()), std::make_pair(KEYBOARD::NUM_6, keyState()), std::make_pair(KEYBOARD::NUM_7, keyState()), std::make_pair(KEYBOARD::NUM_8, keyState()), std::make_pair(KEYBOARD::NUM_9, keyState()),
+                std::make_pair(SPACE, keyState()), std::make_pair(BKSP, keyState()),
+                std::make_pair(ARROW_KEYS::DOWN_ARROW, keyState()), std::make_pair(ARROW_KEYS::UP_ARROW, keyState()), std::make_pair(ARROW_KEYS::RIGHT_ARROW, keyState()), std::make_pair(ARROW_KEYS::LEFT_ARROW, keyState()),
+            };
+            mouseButtonStates.keyStates = {
+                std::make_pair(MOUSE_EVENTS::LEFT_CLICK, MouseButtonsState()), std::make_pair(MOUSE_EVENTS::SCROLL_BTN_CLICK, MouseButtonsState()), std::make_pair(MOUSE_EVENTS::RIGHT_CLICK, MouseButtonsState()),
             };
         }
         void Tick() {
@@ -181,7 +248,7 @@ namespace blsp
                 if (OnUserUpdate(elaspedTimeMS)) {
                     start = high_resolution_clock::now();
                 }
-                keyboardbuttons.resetKeys();
+                buttonStates.resetKeys();
             }
         }
     protected:
@@ -201,7 +268,12 @@ namespace blsp
         };
     protected:
         keyState GetKey(char keyName) {
-            return keyboardbuttons.keyStates[keyName];
+            return buttonStates.keyStates[keyName];
+        }
+        MouseButtonsState GetMouseState(short _MOUSE_EVENTS) {
+            if (_MOUSE_EVENTS <= MOUSE_EVENTS::RIGHT_CLICK) {
+                return mouseButtonStates.keyStates[_MOUSE_EVENTS];
+            }
         }
     protected:
         void SetDrawColor(Color color) {
@@ -377,8 +449,7 @@ namespace blsp
         }
 
         void DrawString(uint8_t r, uint8_t g, uint8_t b, std::string& text, float x, float y) {
-            SDL_Color sdl_Color = { r, g, b};
-            SDL_Surface* surface = TTF_RenderText_Solid(font, text.c_str(), sdl_Color);
+            SDL_Surface* surface = TTF_RenderText_Solid(font, text.c_str(), { r, g, b });
             SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
             SDL_Rect rect = { x, y, text.size() * 7, 13 };
             SDL_RenderCopy(renderer, texture, NULL, &rect);
