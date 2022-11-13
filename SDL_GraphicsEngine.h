@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include <cstdint>
 #include <SDL.h>
 #include <SDL_ttf.h>
@@ -100,6 +101,7 @@ namespace blsp
     typedef vector4d<uint8_t>     vector4di8t;
 
     struct Color : public vector4di8t { Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) { this->x = r; this->y = g; this->z = b; this->a = a; } };
+    struct ColorF : public vector4f { ColorF(float r, float g, float b, float a) { this->x = r; this->y = g; this->z = b; this->a = a; } };
 
     static const Color RED(204, 0, 0, 255), DARK_RED(102, 0, 0, 255), ORANGE(255, 128, 0, 255), BROWN(102, 51, 0, 255), DARK_BROWN(51, 25, 0, 255),
             GREEN(25, 51, 0, 255), LIME_GREEN(128, 255, 0, 255), FOREST_GREEN(0, 51, 0, 255), CYAN(0, 255, 255, 255), TEAL(0, 153, 153, 255);
@@ -138,11 +140,15 @@ namespace blsp
             SDL_DestroyRenderer(renderer);
             SDL_DestroyWindow(window);
             TTF_CloseFont(font);
+
+            delete[] pixels;
+            SDL_DestroyTexture(pixelTexture);
+            SDL_DestroyRenderer(renderer);
             SDL_Quit();
         };
     private:
         struct buttons {
-            std::unordered_map<int, keyState> keyStates;
+            std::unordered_map<uint32_t, keyState> keyStates;
             void resetKeys() {
                 for (auto& x : keyStates) {
                     if (x.first <= 0x03)
@@ -153,38 +159,48 @@ namespace blsp
             }
         };
         struct mouseButtons {
-            bool freezeMotion = false;
             std::unordered_map<short, MouseButtonsState> keyStates;
+            vector2f                                     mousePOS;
+            bool scrolledUp   = false;
+            bool scrolledDown = false;
+            void resetStates() {
+                this->scrolledDown = false;
+                this->scrolledUp   = false;
+            }
         };
     private:
-        SDL_Renderer*       renderer = nullptr;
-        SDL_Window*         window = nullptr;
-        SDL_Event           event;
-        TTF_Font*           font;
-        buttons             buttonStates;
-        mouseButtons        mouseButtonStates;
-
+        SDL_Renderer* renderer    = nullptr;
+        SDL_Window* window        = nullptr;
+        SDL_Texture* pixelTexture = nullptr;
+        Uint32* pixels            = nullptr;
+        SDL_Event event;
+        TTF_Font* font;
     public:
         bool done = false;
     protected:
-        std::string appName;
-        vector2f mousePOS;
+        std::string         appName;
+        buttons             buttonStates;
+        mouseButtons        mouseButtonStates;
+        uint32_t            windowWidth = 0;
+        uint32_t            windowHeight = 0;
     private:
         high_resolution_clock::time_point start;
         high_resolution_clock::time_point finish;
     public:
-        virtual void OnUserCreate() = 0;
-        virtual bool OnUserUpdate(double elaspedTimeMS) = 0;
+        virtual void OnUserCreate()                    = 0;
+        virtual bool OnUserUpdate(float elaspedTimeMS) = 0;
+        virtual bool OnUserDestroy()                   = 0;
     public:
         void ConstructWindow(uint32_t width, uint32_t height) {
+            windowWidth = width;
+            windowHeight = height;
             OnUserCreate();
-            SetUpComponents(width, height);
-            Tick();
+            SetUpComponents();
+            mainThread();
         }
     private:
         bool keyListener() {
-            bool isDragging = true;
-            SDL_PollEvent(&event);
+            if (SDL_PollEvent(&event) == 0) return false;
             if (event.type == SDL_QUIT) return true;
             if (event.type == SDL_KEYDOWN) {
                 buttonStates.keyStates[event.key.keysym.sym].pressed = true;
@@ -196,34 +212,40 @@ namespace blsp
                 if (keycodes >= 0x46 && keycodes <= 0x52) {
                     buttonStates.keyStates[keycodes].pressed = true;
                 }
-                return false;
             }
-            if (event.type == SDL_MOUSEMOTION && !mouseButtonStates.freezeMotion) {
-                mousePOS.setXY(event.button.x, event.button.y);
-                return false;
+            else if (event.type == SDL_MOUSEBUTTONDOWN) {
+                mouseButtonStates.keyStates[event.button.button].pressed = true;
+                mouseButtonStates.keyStates[event.button.button].released = false;
             }
-            if (event.type == SDL_MOUSEBUTTONDOWN && mouseButtonStates.keyStates[event.button.button].pressed == false) {
-                mouseButtonStates.freezeMotion = !mouseButtonStates.freezeMotion;
-                mouseButtonStates.keyStates[event.button.button].pressed = mouseButtonStates.keyStates[event.button.button].pressed ? false : true;
-                mouseButtonStates.keyStates[event.button.button].released = mouseButtonStates.keyStates[event.button.button].released ? false : true;
-                return false;
+            else if (event.type == SDL_MOUSEBUTTONUP) {
+                mouseButtonStates.keyStates[event.button.button].pressed = false;
+                mouseButtonStates.keyStates[event.button.button].released = true;
             }
-            if (event.type == SDL_MOUSEBUTTONUP && mouseButtonStates.keyStates[event.button.button].pressed == true) {
-                //std::cout << "Button clicked! " + hex(event.button.button, 2) << std::endl;
-                mouseButtonStates.keyStates[event.button.button].pressed = mouseButtonStates.keyStates[event.button.button].pressed ? false : true;
-                mouseButtonStates.keyStates[event.button.button].released = mouseButtonStates.keyStates[event.button.button].released ? false : true;
-                mouseButtonStates.freezeMotion = !mouseButtonStates.freezeMotion;
-                return false;
+            else if (event.type == SDL_MOUSEMOTION) {
+                mouseButtonStates.mousePOS.setXY(event.button.x, event.button.y);
+            }
+            else if (event.type == SDL_MOUSEWHEEL) {
+                if (event.wheel.y > 0) {
+                    mouseButtonStates.scrolledUp = true;
+                }
+                else if(event.wheel.y < 0) {
+                    mouseButtonStates.scrolledDown = true;
+                }
             }
             return false;
         }
     private:
-        void SetUpComponents(uint32_t width, uint32_t height) {
+        void SetUpComponents() {
+
             SDL_Init(SDL_INIT_VIDEO);
-            SDL_CreateWindowAndRenderer(width, height, 0, &window, &renderer);
+            SDL_CreateWindowAndRenderer(windowWidth, windowHeight, 0, &window, &renderer);
             TTF_Init();
             font = TTF_OpenFont("./ubuntumono.ttf", 13);
             SDL_SetWindowTitle(window, appName.c_str());
+
+            pixelTexture = SDL_CreateTexture(renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, windowWidth, windowHeight);
+            pixels = new Uint32[windowWidth * windowHeight];
+
             buttonStates.keyStates = {
                 std::make_pair(KEYBOARD::A, keyState()), std::make_pair(KEYBOARD::B, keyState()), std::make_pair(KEYBOARD::C, keyState()), std::make_pair(KEYBOARD::D, keyState()), std::make_pair(KEYBOARD::E, keyState()), std::make_pair(KEYBOARD::F, keyState()), std::make_pair(KEYBOARD::G, keyState()),
                 std::make_pair(KEYBOARD::H, keyState()), std::make_pair(KEYBOARD::I, keyState()), std::make_pair(KEYBOARD::J, keyState()), std::make_pair(KEYBOARD::K, keyState()), std::make_pair(KEYBOARD::L, keyState()), std::make_pair(KEYBOARD::M, keyState()), std::make_pair(KEYBOARD::N, keyState()),
@@ -233,23 +255,27 @@ namespace blsp
                 std::make_pair(KEYBOARD::NUM_0, keyState()), std::make_pair(KEYBOARD::NUM_1, keyState()), std::make_pair(KEYBOARD::NUM_2, keyState()), std::make_pair(KEYBOARD::NUM_3, keyState()), std::make_pair(KEYBOARD::NUM_4, keyState()),
                 std::make_pair(KEYBOARD::NUM_5, keyState()), std::make_pair(KEYBOARD::NUM_6, keyState()), std::make_pair(KEYBOARD::NUM_7, keyState()), std::make_pair(KEYBOARD::NUM_8, keyState()), std::make_pair(KEYBOARD::NUM_9, keyState()),
                 std::make_pair(SPACE, keyState()), std::make_pair(BKSP, keyState()),
+
                 std::make_pair(ARROW_KEYS::DOWN_ARROW, keyState()), std::make_pair(ARROW_KEYS::UP_ARROW, keyState()), std::make_pair(ARROW_KEYS::RIGHT_ARROW, keyState()), std::make_pair(ARROW_KEYS::LEFT_ARROW, keyState()),
             };
             mouseButtonStates.keyStates = {
                 std::make_pair(MOUSE_EVENTS::LEFT_CLICK, MouseButtonsState()), std::make_pair(MOUSE_EVENTS::SCROLL_BTN_CLICK, MouseButtonsState()), std::make_pair(MOUSE_EVENTS::RIGHT_CLICK, MouseButtonsState()),
             };
         }
-        void Tick() {
-            start = high_resolution_clock::now();
+        void mainThread() {
+            finish = high_resolution_clock::now();
+
             while (!keyListener()) {
-                if (SDL_PollEvent(&event) && event.type == SDL_QUIT) break;
-                finish = high_resolution_clock::now();
-                double elaspedTimeMS = ((double)(duration_cast<microseconds>(this->finish - this->start).count())) / 1000.f;
-                if (OnUserUpdate(elaspedTimeMS)) {
-                    start = high_resolution_clock::now();
+                float timeElaspedMilli = duration_cast<microseconds>(this->finish - this->start).count() / 1000.f;
+                start = high_resolution_clock::now();
+                if (!OnUserUpdate(timeElaspedMilli)) {
+                    break;
                 }
                 buttonStates.resetKeys();
+                mouseButtonStates.resetStates();
+                finish = high_resolution_clock::now();
             }
+            OnUserDestroy();
         }
     protected:
         Color AdjustColorSat(Color colorVector, float f, float r_bias = 0.3, float g_bias = 0.6, float b_bias = 0.1) {
@@ -258,8 +284,8 @@ namespace blsp
             float b = (float)colorVector.z;
 
             float L = r_bias * r
-                + g_bias * g
-                + b_bias * b;
+                    + g_bias * g
+                    + b_bias * b;
 
             float new_r = r + f * (L - r);
             float new_g = g + f * (L - g);
@@ -279,24 +305,35 @@ namespace blsp
         void SetDrawColor(Color color) {
             SDL_SetRenderDrawColor(renderer, color.x, color.y, color.z, color.a);
         }
-        void ClearPixels(Color color) {
+        void ClearScreen(Color color) {
+            SDL_UpdateTexture(pixelTexture, NULL, pixels, windowWidth * sizeof(Uint32));
+            memset(pixels, 0, windowWidth * windowHeight * sizeof(Uint32));
             SetDrawColor(color);
             SDL_RenderClear(renderer);
+        }
+        void ClearPixelTexture() {
+            memset(pixels, 0, windowWidth * windowHeight * sizeof(Uint32));
         }
         void RenderScreen() {
             SDL_RenderPresent(renderer);
         }
 
     protected:
-        void DrawPixel(Color color, float x, float y) {
-            SetDrawColor(color);
-            SDL_RenderDrawPoint(renderer, x, y);
+        void RenderPixels() {
+            SDL_RenderCopy(renderer, pixelTexture, NULL, NULL);
         }
         void DrawPixel(Color color, int x, int y) {
-            DrawPixel(color, (float)x, float(y));
+            uint32_t pixel = (color.a << 24) | (color.x << 16) | (color.y << 8) | (color.z);
+            pixels[y * windowWidth + x] = pixel;
         }
         void DrawPixel(Color color, uint32_t x, uint32_t y) {
-            DrawPixel(color, (float)x, (float)y);
+            DrawPixel(color, x, y);
+        }
+        void DrawPixel(ColorF color, uint32_t x, uint32_t y) {
+            DrawPixel(Color((int)color.x, (int)color.y, (int)color.z, (int)color.a), x, y);
+        }
+        void DrawPixel(ColorF color, int x, int y) {
+            DrawPixel(Color((int)color.x, (int)color.y, (int)color.z, (int)color.a), x, y);
         }
 
         void DrawLine(Color color, float x, float y, float x2, float y2) {
@@ -456,7 +493,7 @@ namespace blsp
             SDL_DestroyTexture(texture);
             SDL_FreeSurface(surface);
         }
-        void DrawString(Color color, std::string& text, vector2i pos) {
+        void DrawString(Color color, std::string text, vector2i pos) {
             DrawString(color.x, color.y, color.z, text, (float)pos.x, (float)pos.y);
         }
 
@@ -471,6 +508,9 @@ namespace blsp
         }
         void DrawTriangleFill(vector2f apos, vector2f bpos, vector2f cpos, Color a, Color b, Color c) {
             DrawTriangleFill(apos.x, apos.y, bpos.x, bpos.y, cpos.x, cpos.y, a, b, c);
+        }
+        void DrawTriangleFill(Color color, vector2f apos, vector2f bpos, vector2f cpos) {
+            DrawTriangleFill(apos.x, apos.y, bpos.x, bpos.y, cpos.x, cpos.y, color, color, color);
         }
 
         void DrawTriangleOutline(Color color, float ax, float ay, float bx, float by, float cx, float cy) {
