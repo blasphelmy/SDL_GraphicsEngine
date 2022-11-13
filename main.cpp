@@ -19,10 +19,10 @@ public:
         appName = "MandleBrotSet";
     }
 public:
-    int iterations	= 128;
-    int* pFractal = nullptr;
-	blsp::vector2i pix_tl = blsp::vector2i(0, 0);
-	blsp::vector2i pix_br = blsp::vector2i(WINDOW_WIDTH, WINDOW_HEIGHT);
+    int iterations			= 128;
+    int* pFractal			= nullptr;
+	blsp::vector2i pix_tl	= blsp::vector2i(0, 0);
+	blsp::vector2i pix_br	= blsp::vector2i(WINDOW_WIDTH, WINDOW_HEIGHT);
 	blsp::vector2db frac_tl = blsp::vector2db(-2.0, -1.0);
 	blsp::vector2db frac_br = blsp::vector2db(1.0, 1.0);
 public:
