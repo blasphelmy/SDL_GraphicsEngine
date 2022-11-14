@@ -39,9 +39,15 @@ namespace blsp
         vector2d operator - (vector2d const& obj) { vector2d result; result.x = x - obj.x; result.y = y - obj.y; return result; }
         vector2d operator * (vector2d const& obj) { vector2d result; result.x = x * obj.x; result.y = y * obj.y; return result; }
         vector2d operator / (vector2d const& obj) { vector2d result; result.x = x / obj.x; result.y = y / obj.y; return result; }
+        vector2d& operator += (const vector2d& rhs) { this->x += rhs.x; this->y += rhs.y; return *this; }
+        vector2d& operator -= (const vector2d& rhs) { this->x -= rhs.x; this->y -= rhs.y; return *this; }
+        vector2d& operator *= (const TYPE& rhs) { this->x *= rhs; this->y *= rhs; return *this; }
+        vector2d& operator /= (const TYPE& rhs) { this->x /= rhs; this->y /= rhs; return *this; }
+        vector2d& operator *= (const vector2d& rhs) { this->x *= rhs.x; this->y *= rhs.y; return *this; }
+        vector2d& operator /= (const vector2d& rhs) { this->x /= rhs.x; this->y /= rhs.y; return *this; }
 
         template<class TYPE>
-        vector2d<TYPE> cast_to()                  { return vector2d<TYPE>{ static_cast<TYPE>(x), static_cast<TYPE>(y) }; };
+        vector2d<TYPE> cast_to()                  { return vector2d<TYPE>{ (TYPE)(x), (TYPE)(y) }; };
     };
 
     template<class TYPE>
@@ -73,6 +79,8 @@ namespace blsp
         vector4d operator - (vector4d const& obj) { vector4d result; result.x = x - obj.x; result.y = y - obj.y; result.z = z - obj.z; return result; }
         vector4d operator * (vector4d const& obj) { vector4d result; result.x = x * obj.x; result.y = y * obj.y; result.z = z * obj.z; return result; }
         vector4d operator / (vector4d const& obj) { vector4d result; result.x = x / obj.x; result.y = y / obj.y; result.z = z / obj.z; return result; }
+
+
 
         template<class TYPE>
         vector4d<TYPE> cast_to()                  { return vector4d<TYPE>{ static_cast<TYPE>(x), static_cast<TYPE>(y), static_cast<TYPE>(z), static_cast<TYPE>(a) }; };
