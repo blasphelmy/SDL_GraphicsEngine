@@ -8,7 +8,7 @@
 #include <immintrin.h>
 #undef main
 
-static const uint32_t WINDOW_WIDTH  = 1024;
+static const uint32_t WINDOW_WIDTH = 1024;
 static const uint32_t WINDOW_HEIGHT = 640;
 static const int maxNumberOfThreads = 64;
 
@@ -329,7 +329,7 @@ public:
 				float n = (float)i;
 				float a = 0.1f;
 				// Thank you @Eriksonn - Wonderful Magic Fractal Oddball Man
-				DrawPixel(blsp::ColorF(128 * sin(a * n) + 128, 128 * sin(a * n + 2.094f) + 128, 128 * sin(a * n + 4.188f) + 128, 255), x, y);
+				DrawPixel(blsp::ColorF(128 * sin(a * n) + 128, 0, 64 * cos(a * n) + 64, 64 * cos(a * n) + 64), x, y);
 			}
 		}
 		RenderPixels();

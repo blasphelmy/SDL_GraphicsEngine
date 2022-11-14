@@ -174,7 +174,7 @@ namespace blsp
                 return true;
             }
             bool createSelf(uint32_t windowWidth, uint32_t windowHeight, std::string appName) {
-
+                SDL_SetMainReady();
                 SDL_Init(SDL_INIT_VIDEO);
                 SDL_CreateWindowAndRenderer(windowWidth, windowHeight, 0, &this->window, &this->renderer);
                 TTF_Init();
