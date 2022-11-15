@@ -38,7 +38,7 @@ public:
 		std::thread thread;
 
 
-		void Start(const blsp::vector2i ptl, const blsp::vector2i pbr, const blsp::vector2db ftl, const blsp::vector2db fbr, const int it, const int md, blsp::vector2db cps)
+		void Start(const blsp::vector2i & ptl, const blsp::vector2i & pbr, const blsp::vector2db & ftl, const blsp::vector2db & fbr, const int it, const int md, blsp::vector2db cps)
 		{
 			cpos = cps;
 			mode = md;
@@ -239,7 +239,7 @@ public:
 			threadPool[i].thread = std::thread(&WorkerThread::createFractal, &threadPool[i]);
 		}
 	}
-	void CreateFractalThreadPool(const blsp::vector2i pix_tl, const blsp::vector2i pix_br, const blsp::vector2db frac_tl, const blsp::vector2db frac_br, const int iterations)
+	void CreateFractalThreadPool(const blsp::vector2i & pix_tl, const blsp::vector2i & pix_br, const blsp::vector2db & frac_tl, const blsp::vector2db & frac_br, const int iterations)
 	{
 		int nSectionWidth = (pix_br.x - pix_tl.x) / maxNumberOfThreads;
 		double dFractalWidth = (frac_br.x - frac_tl.x) / double(maxNumberOfThreads);
@@ -270,7 +270,7 @@ public:
 	bool OnUserUpdate(float elaspedTimeMillS) override {
 		ClearScreen(blsp::Color(0, 0, 0, 0));
 
-		blsp::vector2db mousePOS = mouseButtonStates.mousePOS.cast_to<double>();
+		blsp::vector2db mousePOS = mouseButtonStates.mousePOS;
 
 		if (GetMouseState(blsp::MOUSE_EVENTS::LEFT_CLICK).pressed)
 		{
@@ -283,7 +283,7 @@ public:
 			vStartPan = mousePOS;
 		}
 
-		blsp::vector2db vMouseBeforeZoom = ScreenToWorld(mousePOS.cast_to<int>());
+		blsp::vector2db vMouseBeforeZoom = ScreenToWorld(mousePOS);
 		if (mouseButtonStates.scrolledUp || GetKey(blsp::W).pressed) {
 			vScale *= 1.1;
 			zoomLevels++;
@@ -293,7 +293,7 @@ public:
 			zoomLevels--;
 		}
 
-		blsp::vector2db vMouseAfterZoom = ScreenToWorld(mousePOS.cast_to<int>());
+		blsp::vector2db vMouseAfterZoom = ScreenToWorld(mousePOS);
 		vOffset = vOffset + (vMouseBeforeZoom - vMouseAfterZoom);
 
 		blsp::vector2i pix_tl(0, 0);
@@ -360,6 +360,11 @@ public:
 std::atomic<int> MandleBrotSet::nWorkerComplete = 0;
 
 int main() {
+	
+	blsp::vector2ld test(10, 12);
+	blsp::vector2f test1(1.2f, 2.3);
+	test = test1;
+
     MandleBrotSet mdset;
     mdset.ConstructWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
 	return 0;

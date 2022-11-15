@@ -31,25 +31,33 @@ namespace blsp
     template<class TYPE>
     struct vector2d {
         TYPE x, y;
-        vector2d()                                { this->x = 0;  this->y = 0; }
-        vector2d(TYPE xy)                         { this->x = xy; this->y = xy; }
-        vector2d(TYPE x, TYPE y)                  { this->x = x;  this->y = y; }
-        void setAll(TYPE xyz)                     { this->x = xyz; this->y = xyz; }
-        void setXY(TYPE x, TYPE y)                { this->x = x; this->y = y; }
+        vector2d()                 { this->x = 0;  this->y = 0; }
+        vector2d(TYPE xy)          { this->x = xy; this->y = xy; }
+        vector2d(TYPE x, TYPE y)   { this->x = x;  this->y = y; }
+        void setAll(TYPE xyz)      { this->x = xyz; this->y = xyz; }
+        void setXY(TYPE x, TYPE y) { this->x = x; this->y = y; }
 
-        vector2d& operator + (vector2d const& obj) { vector2d result; result.x = x + obj.x; result.y = y + obj.y; return result; }
-        vector2d& operator - (vector2d const& obj) { vector2d result; result.x = x - obj.x; result.y = y - obj.y; return result; }
-        vector2d& operator * (vector2d const& obj) { vector2d result; result.x = x * obj.x; result.y = y * obj.y; return result; }
-        vector2d& operator / (vector2d const& obj) { vector2d result; result.x = x / obj.x; result.y = y / obj.y; return result; }
-        vector2d& operator += (const vector2d& rhs) { this->x += rhs.x; this->y += rhs.y; return *this; }
-        vector2d& operator -= (const vector2d& rhs) { this->x -= rhs.x; this->y -= rhs.y; return *this; }
-        vector2d& operator *= (const TYPE& rhs)     { this->x *= rhs;   this->y*= rhs;    return *this; }
-        vector2d& operator /= (const TYPE& rhs)     { this->x /= rhs;   this->y /= rhs;   return *this; }
-        vector2d& operator *= (const vector2d& rhs) { this->x *= rhs.x; this->y *= rhs.y; return *this; }
-        vector2d& operator /= (const vector2d& rhs) { this->x /= rhs.x; this->y /= rhs.y; return *this; }
+        vector2d& operator + (vector2d const& obj)  { vector2d result; result.x = x + obj.x; result.y = y + obj.y; return result; }
+        vector2d& operator - (vector2d const& obj)  { vector2d result; result.x = x - obj.x; result.y = y - obj.y; return result; }
+        vector2d& operator * (vector2d const& obj)  { vector2d result; result.x = x * obj.x; result.y = y * obj.y; return result; }
+        vector2d& operator / (vector2d const& obj)  { vector2d result; result.x = x / obj.x; result.y = y / obj.y; return result; }
+        vector2d& operator += (vector2d const& rhs) { this->x += rhs.x; this->y += rhs.y; return *this; }
+        vector2d& operator -= (vector2d const& rhs) { this->x -= rhs.x; this->y -= rhs.y; return *this; }
+        vector2d& operator *= (vector2d const& rhs) { this->x *= rhs.x; this->y *= rhs.y; return *this; }
+        vector2d& operator /= (vector2d const& rhs) { this->x /= rhs.x; this->y /= rhs.y; return *this; }
 
+        vector2d& operator *= (TYPE const& rhs) { this->x *= rhs;   this->y *= rhs;    return *this; }
+        vector2d& operator /= (TYPE const& rhs) { this->x /= rhs;   this->y /= rhs;   return *this; }
+
+        operator vector2d<int8_t>() const      { return { static_cast<int8_t>(this->x), static_cast<int8_t>(this->y) }; }
+        operator vector2d<int16_t>() const     { return { static_cast<int16_t>(this->x), static_cast<int16_t>(this->y) }; }
+        operator vector2d<int32_t>() const     { return { static_cast<int32_t>(this->x), static_cast<int32_t>(this->y) }; }
+        operator vector2d<int64_t>() const     { return { static_cast<int64_t>(this->x), static_cast<int64_t>(this->y) }; }
+        operator vector2d<float>() const       { return { static_cast<float>(this->x), static_cast<float>(this->y) }; }
+        operator vector2d<double>() const      { return { static_cast<double>(this->x), static_cast<double>(this->y) }; }
+        operator vector2d<long double>() const { return { static_cast<long double>(this->x), static_cast<long double>(this->y) }; }
         template<class TYPE>
-        vector2d<TYPE> cast_to()                  { return vector2d<TYPE>{ (TYPE)(x), (TYPE)(y) }; };
+        vector2d<TYPE> cast_to()                   { return vector2d<TYPE>{ (TYPE)(x), (TYPE)(y) }; };
     };
 
     template<class TYPE>
@@ -64,13 +72,19 @@ namespace blsp
         vector3d operator - (vector3d const& obj) { vector3d result; result.x = x - obj.x; result.y = y - obj.y; result.z = z - obj.z; return result; }
         vector3d operator * (vector3d const& obj) { vector3d result; result.x = x * obj.x; result.y = y * obj.y; result.z = z * obj.z; return result; }
         vector3d operator / (vector3d const& obj) { vector3d result; result.x = x / obj.x; result.y = y / obj.y; result.z = z / obj.z; return result; }
-        vector3d& operator += (const vector3d& rhs) { this->x += rhs.x; this->y += rhs.y; this->z += rhs; return *this; }
-        vector3d& operator -= (const vector3d& rhs) { this->x -= rhs.x; this->y -= rhs.y; this->z -= rhs; return *this; }
-        vector3d& operator *= (const TYPE& rhs)     { this->x *= rhs;   this->y *= rhs;   this->z *= rhs; return *this; }
-        vector3d& operator /= (const TYPE& rhs)     { this->x /= rhs;   this->y /= rhs;   this->z /= rhs; return *this; }
-        vector3d& operator *= (const vector3d& rhs) { this->x *= rhs.x; this->y *= rhs.y; this->z *= rhs; return *this; }
-        vector3d& operator /= (const vector3d& rhs) { this->x /= rhs.x; this->y /= rhs.y; this->z /= rhs; return *this; }
-
+        vector3d& operator += (vector3d const& rhs) { this->x += rhs.x; this->y += rhs.y; this->z += rhs; return *this; }
+        vector3d& operator -= (vector3d const& rhs) { this->x -= rhs.x; this->y -= rhs.y; this->z -= rhs; return *this; }
+        vector3d& operator *= (TYPE const& rhs)     { this->x *= rhs;   this->y *= rhs;   this->z *= rhs; return *this; }
+        vector3d& operator /= (TYPE const& rhs)     { this->x /= rhs;   this->y /= rhs;   this->z /= rhs; return *this; }
+        vector3d& operator *= (vector3d const& rhs) { this->x *= rhs.x; this->y *= rhs.y; this->z *= rhs; return *this; }
+        vector3d& operator /= (vector3d const& rhs) { this->x /= rhs.x; this->y /= rhs.y; this->z /= rhs; return *this; }
+        operator vector3d<int8_t>() const           { return { static_cast<int8_t>(this->x), static_cast<int8_t>(this->y), static_cast<int8_t>(this->z) }; }
+        operator vector3d<int16_t>() const          { return { static_cast<int16_t>(this->x), static_cast<int16_t>(this->y), static_cast<int16_t>(this->z) }; }
+        operator vector3d<int32_t>() const          { return { static_cast<int32_t>(this->x), static_cast<int32_t>(this->y), static_cast<int32_t>(this->z) }; }
+        operator vector3d<uint64_t>() const         { return { static_cast<uint64_t>(this->x), static_cast<uint64_t>(this->y), static_cast<uint64_t>(this->z) }; }
+        operator vector3d<float>() const            { return { static_cast<float>(this->x), static_cast<float>(this->y), static_cast<float>(this->z) }; }
+        operator vector3d<double>() const           { return { static_cast<double>(this->x), static_cast<double>(this->y), static_cast<double>(this->z) }; }
+        operator vector3d<long double>() const      { return { static_cast<long double>(this->x), static_cast<long double>(this->y), static_cast<long double>(this->z) }; }
         template<class TYPE>
         vector3d<TYPE> cast_to()                  { return vector3d<TYPE>{ static_cast<TYPE>(x), static_cast<TYPE>(y), static_cast<TYPE>(z) }; };
     };
@@ -82,14 +96,23 @@ namespace blsp
         vector4d(TYPE xyz)                        { this->x = xyz; this->y = xyz; this->z = xyz; }
         vector4d(TYPE x, TYPE y, TYPE z, TYPE a)  { this->x = x;   this->y = y;   this->z = z; this->a = a; }
         void setAll(TYPE xyz)                     { this->x = xyz; this->y = xyz; this->z = xyz; }
-
-        vector4d operator + (vector4d const& obj) { vector4d result; result.x = x + obj.x; result.y = y + obj.y; result.z = z + obj.z; return result; }
-        vector4d operator - (vector4d const& obj) { vector4d result; result.x = x - obj.x; result.y = y - obj.y; result.z = z - obj.z; return result; }
-        vector4d operator * (vector4d const& obj) { vector4d result; result.x = x * obj.x; result.y = y * obj.y; result.z = z * obj.z; return result; }
-        vector4d operator / (vector4d const& obj) { vector4d result; result.x = x / obj.x; result.y = y / obj.y; result.z = z / obj.z; return result; }
+        vector4d operator + (vector4d const& obj)  { vector4d result; result.x = x + obj.x; result.y = y + obj.y; result.z = z + obj.z; return result; }
+        vector4d operator - (vector4d const& obj)  { vector4d result; result.x = x - obj.x; result.y = y - obj.y; result.z = z - obj.z; return result; }
+        vector4d operator * (vector4d const& obj)  { vector4d result; result.x = x * obj.x; result.y = y * obj.y; result.z = z * obj.z; return result; }
+        vector4d operator / (vector4d const& obj)  { vector4d result; result.x = x / obj.x; result.y = y / obj.y; result.z = z / obj.z; return result; }
+        vector4d operator *= (vector4d const& rhs) { this->x *= rhs.x; this->y *= rhs.y; this->z *= rhs.y; this->a *= rhs.a; }
+        vector4d operator /= (vector4d const& rhs) { this->x /= rhs.x; this->y /= rhs.y; this->z /= rhs.y; this->a /= rhs.a; }
+        vector4d operator -= (vector4d const& rhs) { this->x -= rhs.x; this->y -= rhs.y; this->z -= rhs.y; this->a -= rhs.a; }
+        vector4d operator += (vector4d const& rhs) { this->x += rhs.x; this->y += rhs.y; this->z += rhs.y; this->a += rhs.a; }
+        operator vector4d<int8_t>() const { return { static_cast<int8_t>(this->x), static_cast<int8_t>(this->y), static_cast<int8_t>(this->z), static_cast<int8_t>(this->a)}; }
+        operator vector4d<int16_t>() const { return { static_cast<int16_t>(this->x), static_cast<int16_t>(this->y), static_cast<int16_t>(this->z), static_cast<int16_t>(this->a) }; }
+        operator vector4d<int64_t>() const { return { static_cast<int64_t>(this->x), static_cast<int64_t>(this->y), static_cast<int64_t>(this->z), static_cast<int64_t>(this->a) }; }
+        operator vector4d<float>() const { return { static_cast<float>(this->x), static_cast<float>(this->y), static_cast<float>(this->z), static_cast<float>(this->a) }; }
+        operator vector4d<double>() const { return { static_cast<double>(this->x), static_cast<double>(this->y), static_cast<double>(this->z), static_cast<double>(this->a) }; }
+        operator vector4d<long double>() const { return { static_cast<long double>(this->x), static_cast<long double>(this->y), static_cast<long double>(this->z), static_cast<long double>(this->a) }; }
 
         template<class TYPE>
-        vector4d<TYPE> cast_to()                  { return vector4d<TYPE>{ static_cast<TYPE>(x), static_cast<TYPE>(y), static_cast<TYPE>(z), static_cast<TYPE>(a) }; };
+        vector4d<TYPE> cast_to()                   { return vector4d<TYPE>{ static_cast<TYPE>(x), static_cast<TYPE>(y), static_cast<TYPE>(z), static_cast<TYPE>(a) }; };
     };
 
     typedef vector2d<int>         vector2i;
@@ -114,7 +137,9 @@ namespace blsp
     typedef vector4d<uint16_t>    vector4i16t;
     typedef vector4d<uint8_t>     vector4di8t;
 
-    struct Color : public vector4di8t { Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) { this->x = r; this->y = g; this->z = b; this->a = a; } };
+    struct Color : public vector4di8t { 
+        Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a) { this->x = r; this->y = g; this->z = b; this->a = a; } 
+    };
     struct ColorF : public vector4f { ColorF(float r, float g, float b, float a) { this->x = r; this->y = g; this->z = b; this->a = a; } };
 
     static const Color RED(204, 0, 0, 255), DARK_RED(102, 0, 0, 255), ORANGE(255, 128, 0, 255), BROWN(102, 51, 0, 255), DARK_BROWN(51, 25, 0, 255),
