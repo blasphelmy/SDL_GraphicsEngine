@@ -225,6 +225,7 @@ public:
 	blsp::vector2db vScale = { WINDOW_WIDTH / 2.0, WINDOW_HEIGHT };
 	WorkerThread threadPool[maxNumberOfThreads];
 	blsp::vector2db oldMousePOS = {0, 0};
+	int zoomLevels = 0;
 	int mode = 0;
 	bool followMouse = true;
 public:
@@ -285,9 +286,11 @@ public:
 		blsp::vector2db vMouseBeforeZoom = ScreenToWorld(mousePOS.cast_to<int>());
 		if (mouseButtonStates.scrolledUp || GetKey(blsp::W).pressed) {
 			vScale *= 1.1;
+			zoomLevels++;
 		}
 		if (mouseButtonStates.scrolledDown || GetKey(blsp::Q).pressed) {
 			vScale *= .9;
+			zoomLevels--;
 		}
 
 		blsp::vector2db vMouseAfterZoom = ScreenToWorld(mousePOS.cast_to<int>());
@@ -341,6 +344,7 @@ public:
 		DrawString(blsp::DARK_BROWN, "1 key : toggle to Julia Set", blsp::vector2i(10, i++ * 16));
 		DrawString(blsp::DARK_BROWN, "2 key : toggle to MandleBrot Set", blsp::vector2i(10, i++ * 16));
 		DrawString(blsp::DARK_BROWN, "x key : toggle c = mousePOS", blsp::vector2i(10, i++ * 16));
+		DrawString(blsp::DARK_BROWN, "zoom level : " + std::to_string(zoomLevels), blsp::vector2i(10, i++ * 16));
 		RenderScreen();
 		return true;
 	}
