@@ -360,10 +360,14 @@ public:
 std::atomic<int> MandleBrotSet::nWorkerComplete = 0;
 
 int main() {
-	
 	blsp::vector2ld test(10, 12);
-	blsp::vector2f test1(1.2f, 2.3);
-	test = test1;
+	blsp::vector2f test1(10, 12);
+	if (test1  != test) {
+		std::cout << "true!";
+	}
+	else {
+		std::cout << "false";
+	}
 
     MandleBrotSet mdset;
     mdset.ConstructWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
