@@ -48,10 +48,10 @@ namespace blsp
         vector2d& operator *= (vector2d const& rhs) { this->x *= rhs.x; this->y *= rhs.y; return *this; }
         vector2d& operator /= (vector2d const& rhs) { this->x /= rhs.x; this->y /= rhs.y; return *this; }
 
-        vector2d& operator *= (TYPE const& rhs)     { this->x *= rhs;   this->y *= rhs;    return *this; }
-        vector2d& operator /= (TYPE const& rhs)     { this->x /= rhs;   this->y /= rhs;   return *this; }
-        vector2d& operator += (TYPE const& rhs)     { this->x += rhs;   this->y += rhs;    return *this; }
-        vector2d& operator -= (TYPE const& rhs)     { this->x -= rhs;   this->y -= rhs;   return *this; }
+        vector2d& operator *= (TYPE const& rhs)     { this->x *= rhs; this->y *= rhs; return *this; }
+        vector2d& operator /= (TYPE const& rhs)     { this->x /= rhs; this->y /= rhs; return *this; }
+        vector2d& operator += (TYPE const& rhs)     { this->x += rhs; this->y += rhs; return *this; }
+        vector2d& operator -= (TYPE const& rhs)     { this->x -= rhs; this->y -= rhs; return *this; }
 
         bool operator == (vector2d const& rhs)      { return this->x == rhs.x && this->y == rhs.y ? true : false; }
         bool operator != (vector2d const& rhs)      { return this->x == rhs.x && this->y == rhs.y ? false : true; }
@@ -132,8 +132,8 @@ namespace blsp
 
         vector4d& operator += (TYPE const& rhs)    { this->x += rhs; this->y += rhs; this->z += rhs; this->a += rhs; return *this; }
         vector4d& operator -= (TYPE const& rhs)    { this->x -= rhs; this->y -= rhs; this->z -= rhs; this->a -= rhs; return *this; }
-        vector4d& operator *= (TYPE const& rhs)    { this->x *= rhs;   this->y *= rhs; this->z *= rhs; this->a *= rhs; return *this; }
-        vector4d& operator /= (TYPE const& rhs)    { this->x /= rhs;   this->y /= rhs; this->z /= rhs; this->a /= rhs; return *this; }
+        vector4d& operator *= (TYPE const& rhs)    { this->x *= rhs; this->y *= rhs; this->z *= rhs; this->a *= rhs; return *this; }
+        vector4d& operator /= (TYPE const& rhs)    { this->x /= rhs; this->y /= rhs; this->z /= rhs; this->a /= rhs; return *this; }
 
 
         bool operator == (vector4d const& rhs)     { return this->x == rhs.x && this->y == rhs.y && this->y == rhs.y && this->a == rhs.a ? true : false; }
@@ -184,13 +184,13 @@ namespace blsp
             DARK_BLUE(0, 0, 102, 255), DARK_PURPLE(25, 0, 51, 255), PURPLE(102, 0, 204, 255), PINK(152, 0, 153, 255), BRIGHT_PINK(255, 0, 255, 255), MAGENTA(204, 0, 102, 255),
             BLACK(0, 0, 0, 255), DARK_GREY(40, 40, 40, 255), LIGHT_GREY(128, 128, 128, 255);
 
-    typedef enum KEYBOARD {
+    enum KEYBOARD {
         A = 'a', B = 'b', C = 'c', D = 'd', E = 'e', F = 'f', G = 'g', H = 'h', I = 'i', J = 'j', K = 'k', L = 'l', M = 'm', 
         N = 'n', O = 'o', P = 'p', Q = 'q', R = 'r', S = 's', T = 't', U = 'u', V = 'v', W = 'w', X = 'x', Y = 'y', Z = 'z',
         NUM_0 = '0', NUM_1 = '1', NUM_2 = '2', NUM_3 = '3', NUM_4 = '4', NUM_5 = '5', NUM_6 = '6', NUM_7 = '7', NUM_8 = '8', NUM_9 = '9',
-        SPACE = ' ', BKSP = '\b', ENTER = '\r', ESC = '\x1B', DASH = '-', MINUS = '-', PLUS = '+', TAB = '\t', SEMICOLIN = ';'
+        SPACE = ' ', BKSP = '\b', ENTER = '\r', ESC = '\x1B', DASH = '-', MINUS = '-', PLUS = '+', TAB = '\t', SEMICOLON = ';'
     };
-    typedef enum ARROW_KEYS {
+    enum ARROW_KEYS {
         RIGHT_ARROW = 0x4f, LEFT_ARROW = 0x50, DOWN_ARROW = 0x51, UP_ARROW = 0x52
     };
 
@@ -228,7 +228,7 @@ namespace blsp
             memset(pixels, 0, size.x * size.y * sizeof(Uint32));
         }
         void DrawPixelToTexture(uint32_t pixel, vector2i xy) {
-            if (xy >= this->topLeft && xy < this->bottomRight) pixels[xy.y * size.x + xy.x] = pixel;
+            if (xy >= 0 && xy < this->size) pixels[xy.y * size.x + xy.x] = pixel;
         }
         void DrawPixelToTexture(Color color, vector2i pos) {
             uint32_t pixel = (color.a << 24) | (color.x << 16) | (color.y << 8) | (color.z);
@@ -428,8 +428,9 @@ namespace blsp
     protected:
         void DrawTexture(Texture& texture) {
             texture.pixelTexture = SDL_CreateTexture(winRenderer.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, texture.size.x, texture.size.y);
+            SDL_Rect textpos = { texture.topLeft.x, texture.topLeft.y, texture.bottomRight.x, texture.bottomRight.y };
             SDL_UpdateTexture(texture.pixelTexture, NULL, texture.pixels, texture.size.x * sizeof(Uint32));
-            SDL_RenderCopy(winRenderer.renderer, texture.pixelTexture, NULL, NULL);
+            SDL_RenderCopy(winRenderer.renderer, texture.pixelTexture, NULL, &textpos);
             SDL_DestroyTexture(texture.pixelTexture);
         }
 

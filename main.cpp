@@ -354,7 +354,7 @@ public:
 		DrawString(blsp::BLUE, "2 key : toggle to MandleBrot Set", blsp::vector2i(10, i++ * 16));
 		DrawString(blsp::BLUE, "x key : toggle c = mousePOS", blsp::vector2i(10, i++ * 16));
 		DrawString(blsp::BLUE, "zoom level : " + std::to_string(zoomLevels), blsp::vector2i(10, i++ * 16));
-		if(mode == 0) DrawString(blsp::BLUE, "Julia Set at c : z = " + std::to_string(oldMousePOS.x) + " + (" + std::to_string(oldMousePOS.y * -1) + ")i", blsp::vector2i(10, i++ * 16));
+		if(mode == 0) DrawString(blsp::BLUE, "Julia Set at c = " + std::to_string(oldMousePOS.x) + " + (" + std::to_string(oldMousePOS.y * -1) + ")i", blsp::vector2i(10, i++ * 16));
 		RenderScreen();
 		return true;
 	}
