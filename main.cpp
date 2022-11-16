@@ -8,8 +8,8 @@
 #include <immintrin.h>
 #undef main
 
-static const uint32_t WINDOW_WIDTH = 1024;
-static const uint32_t WINDOW_HEIGHT = 640;
+static const uint32_t WINDOW_WIDTH = 1280;
+static const uint32_t WINDOW_HEIGHT = 720;
 static const int maxNumberOfThreads = 64;
 
 //Example usage / testing
@@ -217,17 +217,19 @@ public:
 	};
 public:
 	static std::atomic<int> nWorkerComplete;
-    int iterations							= 64;
-    int* pFractal							= nullptr;
+	int iterations = 64;
+	int* pFractal = nullptr;
+	blsp::Texture fractalTexture = blsp::Texture(blsp::vector2i(0, 0), blsp::vector2i(WINDOW_WIDTH, WINDOW_HEIGHT));
 	// Pan & Zoom variables
 	blsp::vector2db vOffset{ -1.5, -0.5 };
 	blsp::vector2db vStartPan = { 0.0, 0.0 };
 	blsp::vector2db vScale = { WINDOW_WIDTH / 2.0, WINDOW_HEIGHT };
 	WorkerThread threadPool[maxNumberOfThreads];
-	blsp::vector2db oldMousePOS = {0, 0};
+	blsp::vector2db oldMousePOS = { 0, 0 };
 	int zoomLevels = 0;
 	int mode = 0;
 	bool followMouse = true;
+	int i = 0;
 public:
 	void InitialiseThreadPool()
 	{
@@ -268,6 +270,8 @@ public:
     }
 
 	bool OnUserUpdate(float elaspedTimeMillS) override {
+		if (GetKey(blsp::KEYBOARD::ESC).pressed) return false;
+
 		ClearScreen(blsp::Color(0, 0, 0, 0));
 
 		blsp::vector2db mousePOS = mouseButtonStates.mousePOS;
@@ -299,6 +303,7 @@ public:
 		blsp::vector2i pix_tl(0, 0);
 		blsp::vector2i pix_br(windowWidth, windowHeight);
 		blsp::vector2db frac_tl(-2.0, -1.0);
+
 		if (mode == 0) {
 			frac_tl = { -1.0, -1.0 };
 		}
@@ -323,7 +328,9 @@ public:
 			followMouse = !followMouse;
 		}
 		if (followMouse) oldMousePOS = vMouseBeforeZoom;
+
 		CreateFractalThreadPool(pix_tl, pix_br, frac_tl, frac_br, iterations);
+		
 		for (int y = 0; y < windowHeight; y++)
 		{
 			for (int x = 0; x < windowWidth; x++)
@@ -332,19 +339,22 @@ public:
 				float n = (float)i;
 				float a = 0.1f;
 				// Thank you @Eriksonn - Wonderful Magic Fractal Oddball Man
-				DrawPixel(blsp::ColorF(128 * sin(a * n) + 128, 0, 64 * cos(a * n) + 64, 64 * cos(a * n) + 64), x, y);
+				fractalTexture.DrawPixelToTexture(blsp::ColorF(128 * sin(a * n) + 128, 0, 64 * cos(a * n) + 64, 64 * cos(a * n) + 64), blsp::vector2i(x, y));
 			}
 		}
-		RenderPixels();
+		DrawTexture(fractalTexture);
+		fractalTexture.ClearPixelTexture();
+		
 		int i = 0;
-		DrawString(blsp::DARK_BROWN, "MousePOS: " + std::to_string(mousePOS.x) + " " + std::to_string(mousePOS.y), blsp::vector2i(10, i++ * 16));
-		DrawString(blsp::DARK_RED, std::to_string(1000.f / elaspedTimeMillS), blsp::vector2i(10, i++ * 16));
-		DrawString(blsp::DARK_BROWN, "Q/W : zoom in/out ", blsp::vector2i(10, i++ * 16));
-		DrawString(blsp::DARK_RED, "F/R key : " + std::to_string(iterations), blsp::vector2i(10, i++ * 16));
-		DrawString(blsp::DARK_BROWN, "1 key : toggle to Julia Set", blsp::vector2i(10, i++ * 16));
-		DrawString(blsp::DARK_BROWN, "2 key : toggle to MandleBrot Set", blsp::vector2i(10, i++ * 16));
-		DrawString(blsp::DARK_BROWN, "x key : toggle c = mousePOS", blsp::vector2i(10, i++ * 16));
-		DrawString(blsp::DARK_BROWN, "zoom level : " + std::to_string(zoomLevels), blsp::vector2i(10, i++ * 16));
+		DrawString(blsp::BLUE, "MousePOS: " + std::to_string(mousePOS.x) + " " + std::to_string(mousePOS.y), blsp::vector2i(10, i++ * 16));
+		DrawString(blsp::BLUE, std::to_string(1000.f / elaspedTimeMillS), blsp::vector2i(10, i++ * 16));
+		DrawString(blsp::BLUE, "Q/W : zoom in/out ", blsp::vector2i(10, i++ * 16));
+		DrawString(blsp::BLUE, "F/R key : " + std::to_string(iterations), blsp::vector2i(10, i++ * 16));
+		DrawString(blsp::BLUE, "1 key : toggle to Julia Set", blsp::vector2i(10, i++ * 16));
+		DrawString(blsp::BLUE, "2 key : toggle to MandleBrot Set", blsp::vector2i(10, i++ * 16));
+		DrawString(blsp::BLUE, "x key : toggle c = mousePOS", blsp::vector2i(10, i++ * 16));
+		DrawString(blsp::BLUE, "zoom level : " + std::to_string(zoomLevels), blsp::vector2i(10, i++ * 16));
+		if(mode == 0) DrawString(blsp::BLUE, "Julia Set at c : z = " + std::to_string(oldMousePOS.x) + " + (" + std::to_string(oldMousePOS.y * -1) + ")i", blsp::vector2i(10, i++ * 16));
 		RenderScreen();
 		return true;
 	}
@@ -360,15 +370,6 @@ public:
 std::atomic<int> MandleBrotSet::nWorkerComplete = 0;
 
 int main() {
-	blsp::vector2ld test(10, 12);
-	blsp::vector2f test1(10, 12);
-	if (test1  != test) {
-		std::cout << "true!";
-	}
-	else {
-		std::cout << "false";
-	}
-
     MandleBrotSet mdset;
     mdset.ConstructWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
 	return 0;

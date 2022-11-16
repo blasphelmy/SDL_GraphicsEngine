@@ -36,6 +36,7 @@ namespace blsp
         vector2d(TYPE x, TYPE y)   { this->x = x;  this->y = y; }
         void setAll(TYPE xyz)      { this->x = xyz; this->y = xyz; }
         void setXY(TYPE x, TYPE y) { this->x = x; this->y = y; }
+        std::string to_string()    { return std::to_string(this->x) + ", " + std::to_string(this->y); }
 
         vector2d& operator + (vector2d const& obj)  { vector2d result; result.x = x + obj.x; result.y = y + obj.y; return result; }
         vector2d& operator - (vector2d const& obj)  { vector2d result; result.x = x - obj.x; result.y = y - obj.y; return result; }
@@ -54,8 +55,8 @@ namespace blsp
 
         bool operator == (vector2d const& rhs)      { return this->x == rhs.x && this->y == rhs.y ? true : false; }
         bool operator != (vector2d const& rhs)      { return this->x == rhs.x && this->y == rhs.y ? false : true; }
-        bool operator <= (vector2d const& rhs)      { return this->x <= rhs.x && this->y <= rhs.y ? true : false; }
-        bool operator >= (vector2d const& rhs)      { return this->x >= rhs.x && this->y >= rhs.y ? true : false; }
+        bool operator <= (vector2d const& rhs)      { return (this->x <= rhs.x && this->y <= rhs.y) ? true : false; }
+        bool operator >= (vector2d const& rhs)      { return (this->x >= rhs.x && this->y >= rhs.y) ? true : false; }
         bool operator < (vector2d const& rhs)       { return this->x < rhs.x && this->y < rhs.y ? true : false; }
         bool operator > (vector2d const& rhs)       { return this->x > rhs.x && this->y > rhs.y ? true : false; }
 
@@ -187,7 +188,7 @@ namespace blsp
         A = 'a', B = 'b', C = 'c', D = 'd', E = 'e', F = 'f', G = 'g', H = 'h', I = 'i', J = 'j', K = 'k', L = 'l', M = 'm', 
         N = 'n', O = 'o', P = 'p', Q = 'q', R = 'r', S = 's', T = 't', U = 'u', V = 'v', W = 'w', X = 'x', Y = 'y', Z = 'z',
         NUM_0 = '0', NUM_1 = '1', NUM_2 = '2', NUM_3 = '3', NUM_4 = '4', NUM_5 = '5', NUM_6 = '6', NUM_7 = '7', NUM_8 = '8', NUM_9 = '9',
-        SPACE = ' ', BKSP = '\b'
+        SPACE = ' ', BKSP = '\b', ENTER = '\r', ESC = '\x1B', DASH = '-', MINUS = '-', PLUS = '+', TAB = '\t', SEMICOLIN = ';'
     };
     typedef enum ARROW_KEYS {
         RIGHT_ARROW = 0x4f, LEFT_ARROW = 0x50, DOWN_ARROW = 0x51, UP_ARROW = 0x52
@@ -197,7 +198,7 @@ namespace blsp
         LEFT_CLICK = 0x01, SCROLL_BTN_CLICK = 0x02, RIGHT_CLICK = 0x03
     };
 
-    int i = SDLK_0;
+    //int i = SDLK_0;
 
     struct keyState {
         bool pressed = false;
@@ -208,23 +209,44 @@ namespace blsp
     };
 
     struct Texture {
-        Texture(int width, int height) {
-            pixels = new Uint32[width * height];
-        }
-        bool destroy() {
-            delete[] pixels;
-            SDL_DestroyTexture(pixelTexture);
-        }
-        bool render(SDL_Renderer* renderer) {
-            SDL_RenderCopy(renderer, pixelTexture, NULL, NULL);
-        }
+        vector2i topLeft;
+        vector2i bottomRight;
+        vector2i size;
         SDL_Texture* pixelTexture = nullptr;
         Uint32* pixels = nullptr;
+
+        Texture(vector2i topLeft, vector2i bottomRight) {
+            this->topLeft = topLeft;
+            this->bottomRight = bottomRight;
+            this->size = bottomRight - topLeft;
+            this->pixels = new Uint32[size.x * size.y];
+        }
+        ~Texture() {
+            delete[] pixels;
+        }
+        void ClearPixelTexture() {
+            memset(pixels, 0, size.x * size.y * sizeof(Uint32));
+        }
+        void DrawPixelToTexture(uint32_t pixel, vector2i xy) {
+            if (xy >= this->topLeft && xy < this->bottomRight) pixels[xy.y * size.x + xy.x] = pixel;
+        }
+        void DrawPixelToTexture(Color color, vector2i pos) {
+            uint32_t pixel = (color.a << 24) | (color.x << 16) | (color.y << 8) | (color.z);
+            DrawPixelToTexture(pixel, pos);
+        }
+        void DrawPixelToTexture(ColorF color, vector2i pos) {
+            DrawPixelToTexture(Color((int)color.x, (int)color.y, (int)color.z, (int)color.a), pos);
+        }
+    };
+
+    struct RectangleShapeTexture : public Texture {
+        using Texture::Texture;
     };
 
     /*
         SDL Graphics Engine Implementation
     */
+
     class SDL_GraphicsEngine {
     public:
         SDL_GraphicsEngine() {}
@@ -272,7 +294,7 @@ namespace blsp
         renderPack winRenderer;
     private:
         struct buttons {
-            std::unordered_map<uint32_t, keyState> keyStates;
+            std::unordered_map<int, keyState> keyStates;
             void resetKeys() {
                 for (auto& x : keyStates) {
                     if (x.first <= 0x03)
@@ -284,7 +306,7 @@ namespace blsp
         };
         struct mouseButtons {
             std::unordered_map<short, MouseButtonsState> keyStates;
-            vector2f mousePOS;
+            vector2i mousePOS;
             bool scrolledUp = false;
             bool scrolledDown = false;
             void resetStates() {
@@ -396,25 +418,23 @@ namespace blsp
             SDL_SetRenderDrawColor(winRenderer.renderer, color.x, color.y, color.z, color.a);
         }
         void ClearScreen(Color color) {
-            SDL_UpdateTexture(winRenderer.pixelTexture, NULL, winRenderer.pixels, windowWidth * sizeof(Uint32));
-            memset(winRenderer.pixels, 0, windowWidth * windowHeight * sizeof(Uint32));
             SetDrawColor(color);
             SDL_RenderClear(winRenderer.renderer);
-        }
-        void ClearPixelTexture() {
-            memset(winRenderer.pixels, 0, windowWidth * windowHeight * sizeof(Uint32));
         }
         void RenderScreen() {
             SDL_RenderPresent(winRenderer.renderer);
         }
 
     protected:
-        void RenderPixels() {
-            SDL_RenderCopy(winRenderer.renderer, winRenderer.pixelTexture, NULL, NULL);
+        void DrawTexture(Texture& texture) {
+            texture.pixelTexture = SDL_CreateTexture(winRenderer.renderer, SDL_PIXELFORMAT_ARGB8888, SDL_TEXTUREACCESS_STATIC, texture.size.x, texture.size.y);
+            SDL_UpdateTexture(texture.pixelTexture, NULL, texture.pixels, texture.size.x * sizeof(Uint32));
+            SDL_RenderCopy(winRenderer.renderer, texture.pixelTexture, NULL, NULL);
+            SDL_DestroyTexture(texture.pixelTexture);
         }
+
         void DrawPixel(Color color, int x, int y) {
-            uint32_t pixel = (color.a << 24) | (color.x << 16) | (color.y << 8) | (color.z);
-            winRenderer.pixels[y * windowWidth + x] = pixel;
+            SDL_RenderDrawPoint(winRenderer.renderer, x, y);
         }
         void DrawPixel(Color color, uint32_t x, uint32_t y) {
             DrawPixel(color, x, y);
@@ -470,23 +490,23 @@ namespace blsp
             DrawRectFill(color, pos.x, pos.y, size.x, size.y);
         }
 
-        void DrawRoundedRectFill(Color color, float posx, float posy, int sizex, int sizey, int radius) {
+        void DrawRoundedRectFill(Color color, int posx, int posy, int sizex, int sizey, int radius) {
             SetDrawColor(color);
             if (sizex % 2 == 0) sizex = sizex - 1;
             if (sizey % 2 == 0) sizey = sizey - 1;
 
-            float x0 = posx + (sizex / 2);
-            float y0 = posy + (sizey / 2);
-            float x = radius - 1;
-            float y = 0;
-            float dx = 1;
-            float dy = 1;
+            int x0 = (int)posx + (sizex / 2);
+            int y0 = (int)posy + (sizey / 2);
+            int x = radius - 1;
+            int y = 0;
+            int dx = 1;
+            int dy = 1;
             int err = dx - (radius << 1);
             while (x >= y) {
-                SDL_RenderDrawLineF(winRenderer.renderer, x0 + y + (sizex / 2) - radius, y0 + x + (sizey / 2) - radius, x0 - y - (sizex / 2) + radius, y0 + x + (sizey / 2) - radius);
-                SDL_RenderDrawLineF(winRenderer.renderer, x0 + x + (sizex / 2) - radius, y0 + y + (sizey / 2) - radius, x0 - x - (sizex / 2) + radius, y0 + y + (sizey / 2) - radius);
-                SDL_RenderDrawLineF(winRenderer.renderer, x0 + x + (sizex / 2) - radius, y0 - y - (sizey / 2) + radius, x0 - x - (sizex / 2) + radius, y0 - y - (sizey / 2) + radius);
-                SDL_RenderDrawLineF(winRenderer.renderer, x0 + y + (sizex / 2) - radius, y0 - x - (sizey / 2) + radius, x0 - y - (sizex / 2) + radius, y0 - x - (sizey / 2) + radius);
+                SDL_RenderDrawLine(winRenderer.renderer, x0 + y + (sizex / 2) - radius, y0 + x + (sizey / 2) - radius, x0 - y - (sizex / 2) + radius, y0 + x + (sizey / 2) - radius);
+                SDL_RenderDrawLine(winRenderer.renderer, x0 + x + (sizex / 2) - radius, y0 + y + (sizey / 2) - radius, x0 - x - (sizex / 2) + radius, y0 + y + (sizey / 2) - radius);
+                SDL_RenderDrawLine(winRenderer.renderer, x0 + x + (sizex / 2) - radius, y0 - y - (sizey / 2) + radius, x0 - x - (sizex / 2) + radius, y0 - y - (sizey / 2) + radius);
+                SDL_RenderDrawLine(winRenderer.renderer, x0 + y + (sizex / 2) - radius, y0 - x - (sizey / 2) + radius, x0 - y - (sizex / 2) + radius, y0 - x - (sizey / 2) + radius);
                 if (err <= 0)
                 {
                     y++;
@@ -500,22 +520,22 @@ namespace blsp
                     err += dx - (radius << 1);
                 }
             }
-            SDL_FRect rect = { posx + 1, posy + radius, sizex - 2, sizey - (radius * 2) };
-            SDL_RenderFillRectF(winRenderer.renderer, &rect);
+            SDL_Rect rect = { posx + 1, posy + radius, sizex - 2, sizey - (radius * 2) };
+            SDL_RenderFillRect(winRenderer.renderer, &rect);
         }
-        void DrawRoundedRectFill(Color color, vector2f pos, vector2i size, int radius) {
+        void DrawRoundedRectFill(Color color, vector2i pos, vector2i size, int radius) {
             DrawRoundedRectFill(color, pos.x, pos.y, size.x, size.y, radius);
         }
 
 
         //https://en.wikipedia.org/w/index.php?title=Midpoint_circle_algorithm&oldid=889172082#C_example
-        void DrawCircleOutline(Color color, float x0, float y0, int radius) {
+        void DrawCircleOutline(Color color, int x0, int y0, int radius) {
             SetDrawColor(color);
-            float x = radius - 1;
-            float y = 0;
-            float dx = 1;
-            float dy = 1;
-            float err = dx - (radius << 1);
+            int x = radius - 1;
+            int y = 0;
+            int dx = 1;
+            int dy = 1;
+            int err = dx - (radius << 1);
             while (x >= y) {
                 SDL_RenderDrawPoint(winRenderer.renderer, x0 + x, y0 + y);
                 SDL_RenderDrawPoint(winRenderer.renderer, x0 + y, y0 + x);
@@ -540,22 +560,22 @@ namespace blsp
                 }
             }
         }
-        void DrawCircleOutline(Color color, vector2f pos, int radius) {
+        void DrawCircleOutline(Color color, vector2i pos, int radius) {
             DrawCircleOutline(color, pos.x, pos.y, radius);
         }
 
-        void DrawCircleFill(Color color, float x0, float y0, int radius) {
+        void DrawCircleFill(Color color, int x0, int y0, int radius) {
             SetDrawColor(color);
-            float x = radius - 1;
-            float y = 0;
-            float dx = 1;
-            float dy = 1;
+            int x = radius - 1;
+            int y = 0;
+            int dx = 1;
+            int dy = 1;
             int err = dx - (radius << 1);
             while (x >= y) {
-                SDL_RenderDrawLineF(winRenderer.renderer, x0 + y, y0 + x, x0 - y, y0 + x);
-                SDL_RenderDrawLineF(winRenderer.renderer, x0 + x, y0 + y, x0 - x, y0 + y);
-                SDL_RenderDrawLineF(winRenderer.renderer, x0 + x, y0 - y, x0 - x, y0 - y);
-                SDL_RenderDrawLineF(winRenderer.renderer, x0 + y, y0 - x, x0 - y, y0 - x);
+                SDL_RenderDrawLine(winRenderer.renderer, x0 + y, y0 + x, x0 - y, y0 + x);
+                SDL_RenderDrawLine(winRenderer.renderer, x0 + x, y0 + y, x0 - x, y0 + y);
+                SDL_RenderDrawLine(winRenderer.renderer, x0 + x, y0 - y, x0 - x, y0 - y);
+                SDL_RenderDrawLine(winRenderer.renderer, x0 + y, y0 - x, x0 - y, y0 - x);
                 if (err <= 0)
                 {
                     y++;
@@ -571,11 +591,11 @@ namespace blsp
                 }
             }
         }
-        void DrawCircleFill(Color color, vector2f pos, int radius) {
+        void DrawCircleFill(Color color, vector2i pos, int radius) {
             DrawCircleFill(color, pos.x, pos.y, radius);
         }
 
-        void DrawString(uint8_t r, uint8_t g, uint8_t b, std::string& text, float x, float y) {
+        void DrawString(uint8_t r, uint8_t g, uint8_t b, std::string& text, int x, int y) {
             SDL_Surface* surface = TTF_RenderText_Solid(winRenderer.font, text.c_str(), { r, g, b });
             SDL_Texture* texture = SDL_CreateTextureFromSurface(winRenderer.renderer, surface);
             SDL_Rect rect = { x, y, surface->w, surface->h };
@@ -584,7 +604,7 @@ namespace blsp
             SDL_FreeSurface(surface);
         }
         void DrawString(Color color, std::string text, vector2i pos) {
-            DrawString(color.x, color.y, color.z, text, (float)pos.x, (float)pos.y);
+            DrawString(color.x, color.y, color.z, text, pos.x, pos.y);
         }
 
         void DrawTriangleFill(float ax, float ay, float bx, float by, float cx, float cy, Color a, Color b, Color c) {
@@ -613,9 +633,6 @@ namespace blsp
             DrawTriangleOutline(color, a.x, a.y, b.x, b.y, c.x, c.y);
         }
 
-        SDL_Vertex CreatePoint(float x, float y, Color color) {
-            return { SDL_FPoint{x, y}, SDL_Color{color.x, color.y, color.z, color.a}, SDL_FPoint{0} };
-        }
         void DrawGeometry(std::vector<SDL_Vertex> mesh) {
             SDL_RenderGeometry(winRenderer.renderer, nullptr, mesh.data(), mesh.size(), nullptr, 0);
         }
