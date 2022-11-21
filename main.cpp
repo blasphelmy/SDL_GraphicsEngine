@@ -6,6 +6,7 @@
 #include <complex>
 #include <cstdlib>
 #include <immintrin.h>
+#include <Windows.h>
 #undef main
 
 static const uint32_t WINDOW_WIDTH = 1280;
@@ -221,7 +222,7 @@ public:
 	int* pFractal = nullptr;
 	blsp::Texture fractalTexture = blsp::Texture(blsp::vector2i(0, 0), blsp::vector2i(WINDOW_WIDTH, WINDOW_HEIGHT));
 	// Pan & Zoom variables
-	blsp::vector2db vOffset{ -1.5, -0.5 };
+	blsp::vector2db vOffset = { -1.5, -0.5 };
 	blsp::vector2db vStartPan = { 0.0, 0.0 };
 	blsp::vector2db vScale = { WINDOW_WIDTH / 2.0, WINDOW_HEIGHT };
 	WorkerThread threadPool[maxNumberOfThreads];
@@ -343,7 +344,6 @@ public:
 			}
 		}
 		DrawTexture(fractalTexture);
-		fractalTexture.ClearPixelTexture();
 		
 		int i = 0;
 		DrawString(blsp::BLUE, "MousePOS: " + std::to_string(mousePOS.x) + " " + std::to_string(mousePOS.y), blsp::vector2i(10, i++ * 16));
@@ -355,6 +355,7 @@ public:
 		DrawString(blsp::BLUE, "x key : toggle c = mousePOS", blsp::vector2i(10, i++ * 16));
 		DrawString(blsp::BLUE, "zoom level : " + std::to_string(zoomLevels), blsp::vector2i(10, i++ * 16));
 		if(mode == 0) DrawString(blsp::BLUE, "Julia Set at c = " + std::to_string(oldMousePOS.x) + " + (" + std::to_string(oldMousePOS.y * -1) + ")i", blsp::vector2i(10, i++ * 16));
+
 		RenderScreen();
 		return true;
 	}
@@ -369,8 +370,84 @@ public:
 };
 std::atomic<int> MandleBrotSet::nWorkerComplete = 0;
 
+class BasicShapesDemo : public blsp::SDL_GraphicsEngine {
+public:
+	BasicShapesDemo() {
+		appName = "BasicShapesDemo";
+	}
+public:
+	int i = 0;
+	bool jiggletest = true;
+	std::string keyboardtest = "";
+public:
+	void OnUserCreate() override {
+	}
+	bool OnUserDestroy() override {
+		return true;
+	}
+	bool OnUserUpdate(float elaspedTimeMS) override {
+		Sleep(100);
+		ClearScreen(blsp::Color(0, 0, 0, 0));
+		DrawPixel(blsp::LIME_GREEN, 50, 50);
+		DrawRoundedRectFill(blsp::CYAN, 350, 350, 200, 350, 30);
+		DrawLine(blsp::LIME_GREEN, blsp::vector2i(20, 20), blsp::vector2i(100, 120));
+		DrawTriangleOutline(blsp::CYAN, 10, 10, 29, 19, 40, 50);
+		if (i > 1280 - 200) jiggletest = false;
+		if (i <= 0) jiggletest = true;
+		if (jiggletest) {
+			DrawRoundedRectFill(blsp::ORANGE, blsp::vector2f(i++ / 100, 50), blsp::vector2i(200, 100), 15);
+		}
+		else {
+			DrawRoundedRectFill(blsp::ORANGE, blsp::vector2f(i-- / 100, 50), blsp::vector2i(200, 100), 15);
+		}
+		std::string time = std::to_string(1000.f / elaspedTimeMS);
+		DrawString(blsp::RED, time, blsp::vector2i(0, 0));
+
+		if (GetKey(blsp::A).pressed) keyboardtest += "a";
+		if (GetKey(blsp::B).pressed) keyboardtest += "b";
+		if (GetKey(blsp::C).pressed) keyboardtest += "c";
+		if (GetKey(blsp::D).pressed) keyboardtest += "d";
+		if (GetKey(blsp::E).pressed) keyboardtest += "e";
+		if (GetKey(blsp::F).pressed) keyboardtest += "f";
+		if (GetKey(blsp::G).pressed) keyboardtest += "g";
+		if (GetKey(blsp::H).pressed) keyboardtest += "h";
+		if (GetKey(blsp::I).pressed) keyboardtest += "i";
+		if (GetKey(blsp::J).pressed) keyboardtest += "j";
+		if (GetKey(blsp::K).pressed) keyboardtest += "k";
+		if (GetKey(blsp::L).pressed) keyboardtest += "l";
+		if (GetKey(blsp::M).pressed) keyboardtest += "m";
+		if (GetKey(blsp::N).pressed) keyboardtest += "n";
+		if (GetKey(blsp::O).pressed) keyboardtest += "o";
+		if (GetKey(blsp::P).pressed) keyboardtest += "p";
+		if (GetKey(blsp::Q).pressed) keyboardtest += "q";
+		if (GetKey(blsp::R).pressed) keyboardtest += "r";
+		if (GetKey(blsp::S).pressed) keyboardtest += "s";
+		if (GetKey(blsp::T).pressed) keyboardtest += "t";
+		if (GetKey(blsp::U).pressed) keyboardtest += "u";
+		if (GetKey(blsp::V).pressed) keyboardtest += "v";
+		if (GetKey(blsp::W).pressed) keyboardtest += "w";
+		if (GetKey(blsp::X).pressed) keyboardtest += "x";
+		if (GetKey(blsp::Y).pressed) keyboardtest += "y";
+		if (GetKey(blsp::Z).pressed) keyboardtest += "z";
+
+		blsp::RoundedRectangle rect(blsp::vector2f(0, 0), blsp::vector2f(600, 800), 12, -8, 0);
+
+		calculateNextPoint2d(rect.position, rect.acceleration, elaspedTimeMS);
+
+		DrawRoundedRectFill(blsp::MAGENTA, rect.position, blsp::vector2f(100, 199), rect.radius);
+
+		DrawString(blsp::RED, keyboardtest, blsp::vector2i(0, 10));
+
+		RenderScreen();
+		return true;
+	}
+};
+
 int main() {
-    MandleBrotSet mdset;
-    mdset.ConstructWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
+    //MandleBrotSet mdset;
+    //mdset.ConstructWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
+
+	BasicShapesDemo shapeDemo;
+	shapeDemo.ConstructWindow(WINDOW_WIDTH, WINDOW_HEIGHT);
 	return 0;
 }
