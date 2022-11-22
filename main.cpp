@@ -379,6 +379,7 @@ public:
 	int i = 0;
 	bool jiggletest = true;
 	std::string keyboardtest = "";
+	blsp::RoundedRectangle rect = blsp::RoundedRectangle(blsp::vector2f(0, 0), blsp::vector2f(600, 800), 12, 12, 100);
 public:
 	void OnUserCreate() override {
 	}
@@ -386,7 +387,7 @@ public:
 		return true;
 	}
 	bool OnUserUpdate(float elaspedTimeMS) override {
-		Sleep(100);
+		//Sleep(100);
 		ClearScreen(blsp::Color(0, 0, 0, 0));
 		DrawPixel(blsp::LIME_GREEN, 50, 50);
 		DrawRoundedRectFill(blsp::CYAN, 350, 350, 200, 350, 30);
@@ -430,11 +431,9 @@ public:
 		if (GetKey(blsp::Y).pressed) keyboardtest += "y";
 		if (GetKey(blsp::Z).pressed) keyboardtest += "z";
 
-		blsp::RoundedRectangle rect(blsp::vector2f(0, 0), blsp::vector2f(600, 800), 12, -8, 0);
-
 		calculateNextPoint2d(rect.position, rect.acceleration, elaspedTimeMS);
 
-		DrawRoundedRectFill(blsp::MAGENTA, rect.position, blsp::vector2f(100, 199), rect.radius);
+		DrawRoundedRectFill(blsp::MAGENTA, rect.position, rect.size, rect.radius);
 
 		DrawString(blsp::RED, keyboardtest, blsp::vector2i(0, 10));
 

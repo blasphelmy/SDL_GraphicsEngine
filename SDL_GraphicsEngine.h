@@ -236,14 +236,13 @@ namespace blsp
 
     struct RoundedRectangle : public rigidBody {
         vector2f & topLeft = position;
-        vector2f bottomRight = { 0.f, 0.f };
+        vector2f size = { 0.f, 0.f };
         vector2f center = { 0.f, 0.f };
         int radius = 0;
-        RoundedRectangle(vector2f topLeft, vector2f bottomRight, float radius, float UP_DOWN, float RIGHT_LEFT) {
+        RoundedRectangle(vector2f topLeft, vector2f size, float radius, float UP_DOWN, float RIGHT_LEFT) {
             this->acceleration = vector2f(UP_DOWN, RIGHT_LEFT);
             this->position = topLeft;
-            this->bottomRight = bottomRight;
-            this->center = (topLeft + bottomRight) / 2;
+            this->size = size;
             this->radius = radius;
         }
         //vector2f getSize() {
@@ -321,8 +320,9 @@ namespace blsp
         float currentTimeElasped = 0;
     public:
         void _calculateNextPoint2d(vector2f & pos, vector2f & rigidBodyConst, float timeElasped) {
-            pos.x = pos.x + (rigidBodyConst.y * timeElasped);
-            pos.y = pos.y + (rigidBodyConst.x * timeElasped);
+            timeElasped /= 1000.f;
+            pos.x += (rigidBodyConst.x * timeElasped);
+            pos.y += (rigidBodyConst.y * timeElasped);
         }
         float getConstants() {
             return 0.0f;
@@ -427,7 +427,7 @@ namespace blsp
         }
     private:
         void mainThread() {
-            finish = high_resolution_clock::now();
+            //finish = high_resolution_clock::now();
 
             while (!keyListener()) {
                 float timeElaspedMilli = duration_cast<microseconds>(this->finish - this->start).count() / 1000.f;
@@ -690,8 +690,8 @@ namespace blsp
             SDL_RenderGeometry(renderer, nullptr, mesh.data(), mesh.size(), nullptr, 0);
         }
 
-        void calculateNextPoint2d(vector2f & position, vector2f & acceleration, float timeElasped) {
-            _calculateNextPoint2d(position, acceleration, timeElasped);
+        void calculateNextPoint2d(vector2f & position, vector2f & acceleration, float timeElaspedMilliS) {
+            _calculateNextPoint2d(position, acceleration, timeElaspedMilliS);
         }
     };
 }
