@@ -66,7 +66,7 @@ namespace blsp
     template<class TYPE>
     struct vector3d {
         TYPE x, y, z;
-        vector3d() { this->x = 0;   this->y = 0;   this->z = 0; }
+        vector3d() { this->x = 0; this->y = 0; this->z = 0; }
         vector3d(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
         vector3d(TYPE x, TYPE y, TYPE z) { this->x = x;   this->y = y;   this->z = z; }
         void setAll(TYPE xyz) { this->x = xyz; this->y = xyz; this->z = xyz; }
@@ -210,6 +210,7 @@ namespace blsp
 
     struct rigidBody {
         vector2f acceleration;
+        vector2f constants;
         vector2f position = { 0.f, 0.f };
         bool isRidged = true;
     };
@@ -219,6 +220,9 @@ namespace blsp
         Circle(float radius, float UP_DOWN, float RIGHT_LEFT) {
             this->acceleration = vector2f(UP_DOWN, RIGHT_LEFT);
             this->radius = radius;
+        }
+        bool CheckBoundsRect(const vector2f& pos, const vector2f& bottomRight) {
+
         }
     };
 
@@ -249,6 +253,7 @@ namespace blsp
         //    return bottomRight - position;
         //}
     };
+
     
     struct Texture {
         vector2i topLeft;
@@ -331,12 +336,10 @@ namespace blsp
         }
     };
 
-    class MouseButtons {
-    public:
+    class SoundEngine {
+
     };
-    class KeyboardButtons {
-    public:
-    };
+
     class SDL_GraphicsEngine : WindowRenderer, PhysicsEngine {
     public:
         SDL_GraphicsEngine() {}
@@ -466,10 +469,10 @@ namespace blsp
             }
         }
     protected:
-        void SetDrawColor(const Color color) {
+        void SetDrawColor(const Color & color) {
             SDL_SetRenderDrawColor(renderer, color.x, color.y, color.z, color.a);
         }
-        void ClearScreen(const Color color) {
+        void ClearScreen(const Color & color) {
             SetDrawColor(color);
             SDL_RenderClear(renderer);
         }
@@ -490,7 +493,7 @@ namespace blsp
             SetDrawColor(color);
             SDL_RenderDrawPoint(renderer, x, y);
         }
-        void DrawPixel(const Color color, uint32_t x, uint32_t y) {
+        void DrawPixel(const Color & color, uint32_t x, uint32_t y) {
             DrawPixel(color, x, y);
         }
         void DrawPixel(const ColorF color, uint32_t x, uint32_t y) {
@@ -676,13 +679,13 @@ namespace blsp
             DrawTriangleFill(apos.x, apos.y, bpos.x, bpos.y, cpos.x, cpos.y, color, color, color);
         }
 
-        void DrawTriangleOutline(const Color color, float ax, float ay, float bx, float by, float cx, float cy) {
+        void DrawTriangleOutline(const Color & color, float ax, float ay, float bx, float by, float cx, float cy) {
             SetDrawColor(color);
             SDL_RenderDrawLineF(renderer, ax, ay, bx, by);
             SDL_RenderDrawLineF(renderer, ax, ay, cx, cy);
             SDL_RenderDrawLineF(renderer, cx, cy, bx, by);
         }
-        void DrawTriangleOutline(const Color color, const vector2f & a, const vector2f & b, const vector2f & c) {
+        void DrawTriangleOutline(const Color & color, const vector2f & a, const vector2f & b, const vector2f & c) {
             DrawTriangleOutline(color, a.x, a.y, b.x, b.y, c.x, c.y);
         }
 
